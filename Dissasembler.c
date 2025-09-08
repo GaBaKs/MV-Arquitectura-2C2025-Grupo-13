@@ -3,6 +3,11 @@
 #include <string.h>
 #include "Dissasembler.h" //Vacio, los prototipos
 
+
+// hacer 3 typedef separados
+
+
+
 void imprimeMnemonico(unsigned char cod){ 
 
     switch(orden){

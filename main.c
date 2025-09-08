@@ -4,14 +4,6 @@
 #define REGISTROS 32
 #define MEMORIA 16384
 
-typedef struct{
-    unsigned int Reg[REGISTROS];           // Cantidad de registros
-    unsigned char Mem[MEMORIA];            // Cantidad de memoria
-    unsigned char codigo_error;            // Codigo de error
-    unsigned short tabla_Seg[4];           
-} TipoMKV;
-
-
 int main(){
 
     return 0;
