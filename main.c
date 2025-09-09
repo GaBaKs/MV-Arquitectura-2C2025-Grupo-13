@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#define REGISTROS 32
-#define MEMORIA 16384
+#include "TDA.h" //Vacio, los prototipos
+
 
 int main(){
 
@@ -28,7 +28,7 @@ void Lectura(char nombre_arch[],TipoMKV *MKV, int *DS,int *CS){
     i = 0; 
     char version;
     unsigned char cabecera[5];
-    archivo = fopen(nombre_arch, "rb");
+    arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
             printf("Error al abrir el archivo");
         else{
@@ -36,12 +36,12 @@ void Lectura(char nombre_arch[],TipoMKV *MKV, int *DS,int *CS){
                 fread(&cabecera[j], sizeof(unsigned char), 1, arch);
                 fread(&version, sizeof(unsigned char), 1, arch);
             if (verifica_cabecera(cabecera)){ 
-                MKV->tablaseg[0]= 0;     // base CS
-                fread(MKV.tablaseg[1], sizeof(unsigned short), 1, arch);       // se lee el tamanio del codigo
-                MKV->tablaseg[2]=MKV->tablaseg[1];                    
-                MKV->tablaseg[3]=16384-MKV->tablaseg[2];
-                *CS = MKV->tablaseg[0];                                           //inicializo el CS 
-                *DS = MKV->tablaseg[1]+1;                                         //Inicializo del DS una posicion mas del CS
+                MKV->tabla_seg[0]= 0;     // base CS
+                fread(MKV.tabla_seg[1], sizeof(unsigned short), 1, arch);       // se lee el tamanio del codigo
+                MKV->tabla_seg[2]=MKV->tabla_seg[1];                    
+                MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];
+                *CS = MKV->tabla_seg[0];                                           //inicializo el CS 
+                *DS = MKV->tabla_seg[1]+1;                                         //Inicializo del DS una posicion mas del CS
 
 
 
@@ -55,7 +55,7 @@ void Lectura(char nombre_arch[],TipoMKV *MKV, int *DS,int *CS){
                 printf("Error al leer cabecera");
         }
 }
-
+int Tamanio_Instruccion()
 
 
 void ejecucion(TipoMKV *MKV){
