@@ -1,0 +1,1 @@
+#define MASC_CODOP 0x1F //0001 1111
