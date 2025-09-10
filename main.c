@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "TDA.h" //Vacio, los prototipos
+#include "mascaras.h"
+#include "Operaciones_Generales.c" 
+#include "Operaciones.c"
+#include "Codigos_Registros.h"
 
 
 int main(){
@@ -62,10 +66,11 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 void ejecucion(TipoMKV *MKV){
     inicializacion(nombre_arch,MKV);
     char instruccion;
+    short TopA,TopB;
     void (*op2[16])(int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
     void (*op1[9])(int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
     while (MKV->codigo_error==0 && MKV->reg[IP]!=-1 ){   // mientas no exista un error o se lea un STOP o se termine la memoria
-            instruccion=MKV->mem[logifisi(MKV->reg[IP])];   // guardo la instruccion de donde apunta IP 
+            instruccion=MKV->mem[logifisi(MKV,MKV->reg[IP])];   // guardo la instruccion de donde apunta IP 
           //if codinvalido
           //    MKV->codigo_error=1;
           //else
@@ -76,9 +81,14 @@ void ejecucion(TipoMKV *MKV){
             }
             else
                 if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){        //dos operandos
-                    //saco opA y opB
-
-                    op2[instruccion & 0x0F](opA,Topa,opB,Topb);
+                    //saco opA y opB a chequear como se hace
+                    git 
+                    MKV->reg[OP1]=MKV->mem[logifisi(MKV,MKV->reg[IP]>>4)]; // me desplazo una celda de la memoria para sacar opA desde IP
+                    TopA=instruccion & MASC_TOPA;
+                    MKV->reg[OP2]=MKV->mem[logifisi(MKV,MKV->reg[IP]>>8)]; // me desplazo dos celda de la memoria para sacar opB desde IP
+                    TopB=instruccion & MASC_TOPB;
+                    
+                    op2[instruccion & 0x0F](MKV->reg[OP1],Topa,MKV->reg[OP2],Topb); //deberiamos cambiar la sintaxis de op2, puede confundirse con el valor del operando 1
 
 
                 }
@@ -90,8 +100,4 @@ void ejecucion(TipoMKV *MKV){
 
 
 }
-
-int dirfisica()
-{
-
-}
+ // defini la func de logifisi en operaciones_generales.c

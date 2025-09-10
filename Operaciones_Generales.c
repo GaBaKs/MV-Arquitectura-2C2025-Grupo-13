@@ -22,3 +22,29 @@ generavectornmemo(Tmnemo Vmnemo)
     Vmnemo[CS].mnemonico="CS";   //26
     Vmnemo[DS].mnemonico="DS";   //27
 }
+
+int logifisi(tipoMKV MKV,int dirlog){
+    int dirfis,segmento,dirmask;
+    segmento=dirlog>>16;
+    dirmask=dirlog & 0x0000FFFF;
+        if (segmento==0){ //Segmento de codigo 
+            if (dirlog>=0 && dirlog<MKV.tabla_seg[2]){ //Verifica que la direccion logica este dentro del segmento de codigo
+                dirfis=MKV.tabla_seg[0]+dirmask; //Direccion fisica = base CS + direccion logica
+                return dirfis;
+            }
+            else{
+                MKV.codigo_error=3; //Fallo de segmento
+                return -1;
+            }
+        }
+        else{
+            if (dirlog>=0 && dirlog<MKV.tabla_seg[4]){ //Verifica que la direccion logica este dentro del segmento de datos
+                dirfis=MKV.tabla_seg[3]+dirmask; //Direccion fisica = base DS + direccion logica
+                return dirfis;
+            }
+            else{
+                MKV.codigo_error=3; //Fallo de segmento
+                return -1;
+            }
+        }
+}

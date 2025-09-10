@@ -1,1 +1,3 @@
 #define MASC_CODOP 0x1F //0001 1111
+#define MASC_TOPA  0x30 //0011 0000
+#define MASC_TOPB  0xC0 //1100 0000
