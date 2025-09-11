@@ -3,8 +3,8 @@
 #define MBR 2   // Acceso de memoria
 #define IP  3   // Instruccion
 #define OPC 4   // Instruccion
-#define OP1 5   // Instruccion
-#define OP2 6   // Instruccion
+#define OPA 5   // Instruccion
+#define OPB 6   // Instruccion
 
 #define EAX 10  //Registro de proposito general
 #define EBX 11  //Registro de proposito general

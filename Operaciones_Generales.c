@@ -23,28 +23,118 @@ generavectornmemo(Tmnemo Vmnemo)
     Vmnemo[DS].mnemonico="DS";   //27
 }
 
-int logifisi(tipoMKV MKV,int dirlog){
-    int dirfis,segmento,dirmask;
+int logifisi(tipoMKV MKV,int dirlog){ 
+    int dirfis,segmento,offset;
     segmento=dirlog>>16;
-    dirmask=dirlog & 0x0000FFFF;
+    offset=dirlog & 0x0000FFFF;
         if (segmento==0){ //Segmento de codigo 
-            if (dirlog>=0 && dirlog<MKV.tabla_seg[2]){ //Verifica que la direccion logica este dentro del segmento de codigo
-                dirfis=MKV.tabla_seg[0]+dirmask; //Direccion fisica = base CS + direccion logica
+            dirfis=MKV.tabla_seg[0]+offset;//Direccion fisica = base CS + direccion logica
+            if (dirfis>=MKV.tabla_seg[0] && dirfis<=MKV.tabla_seg[2]) //Verifica que la direccion fisica este dentro del segmento de codigo    
                 return dirfis;
-            }
-            else{
-                MKV.codigo_error=3; //Fallo de segmento
+            else
                 return -1;
-            }
         }
         else{
-            if (dirlog>=0 && dirlog<MKV.tabla_seg[4]){ //Verifica que la direccion logica este dentro del segmento de datos
-                dirfis=MKV.tabla_seg[3]+dirmask; //Direccion fisica = base DS + direccion logica
+            dirfis=MKV.tabla_seg[3]+offset; //Direccion fisica = base DS + direccion logica
+            if (dirfis>=0 && dirfis<=MKV.tabla_seg[4]) //Verifica que la direccion logica este dentro del segmento de datos       
                 return dirfis;
-            }
-            else{
-                MKV.codigo_error=3; //Fallo de segmento
+            else
                 return -1;
-            }
         }
+}
+
+void cambioip(TipoMKV *MKV,int TopA,int TopB){
+    int suma=1;
+        if (TopA==0x01)
+            suma++;
+        else
+            if (TopA==0x10)
+                suma+=2;
+            else
+                if (TopA==0x11)
+                    suma+=3;     
+        if (TopB==0x01)
+            suma++;
+        else
+            if (TopB==0x10)
+                suma+=2;
+            else
+                if (TopB==0x11)
+                    suma+=3;
+    MKV->reg[IP]+=suma;
+}
+
+int escopeta(int corredera){
+    corredera<<=8;  //chk
+    corredera>>=8;  //chk
+    return corredera;
+}
+
+int codinvalido(char instruccion){
+    if (instruccion<0 || instruccion>0x1F)
+        return 1;
+    else
+        return 0;
+}
+
+void getOperandos(TipoMKV *MKV,char instruccion,int dirfis, char Top){
+    MKV->reg[OPB]=0;
+    MKV->reg[OPA]=0; 
+    if  (Top =='a')       
+        TopB=instruccion & MASC_TOPA >> 4;
+    else
+        TopB=instruccion & MASC_TOPB >> 6;
+            MKV->reg[OPB]=TopB;
+            if (TopB==1)
+                MKV->reg[OPB]<<=16;
+            else
+                if (TopB==2)
+                    MKV->reg[OPB]<<=8;
+            for (int i=0;i<TopB;i++){
+                MKV->reg[OPB]=MKV->reg[OPB]<<8; 
+                MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
+            }
+}                       
+
+/*void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
+    MKV->reg[OPB]=0;
+    MKV->reg[OPA]=0;                
+    TopA=instruccion & MASC_TOPA >> 4;
+    TopB=instruccion & MASC_TOPB >> 6;
+            MKV->reg[OPB]=TopB;
+            if (TopB==1)
+                MKV->reg[OPB]<<=16;
+            else
+                if (TopB==2)
+                    MKV->reg[OPB]<<=8;
+            for (int i=0;i<TopB;i++){
+                MKV->reg[OPB]=MKV->reg[OPB]<<8; 
+                MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
+            }
+                    MKV->reg[OPA]=TopA;
+            if (TopA==1)
+                MKV->reg[OPA]<<=16;
+            else
+                if (TopA==2)
+                    MKV->reg[OPA]<<=8;
+            for (int i=0;i<TopA;i++){
+                MKV->reg[OPA]=MKV->reg[OPA]<<8; 
+                MKV->reg[OPA]+=MKV->mem[TopB+dirfis+1+i];
+                
+            }   
+}     
+  */
+
+void verificaerrores(int codigo_error){
+    switch (codigo_error){
+        case 1:
+            printf("ERROR: Instruccion invalida");
+            break;
+        case 2:
+            printf("ERROR: Division por cero");
+            break;
+        case 3:
+            printf("ERROR: Fallo de segmento");  
+            break;  
+    }
 }

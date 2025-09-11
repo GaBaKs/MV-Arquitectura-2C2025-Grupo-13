@@ -1,6 +1,7 @@
 #define MAX 10
 #define REGISTROS 32
 #define MEMORIA 16384
+#define 
 typedef struct{
     unsigned int reg[REGISTROS];           // Cantidad de registros
     unsigned char mem[MEMORIA];            // Cantidad de memoria

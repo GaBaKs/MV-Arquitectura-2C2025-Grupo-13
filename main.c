@@ -45,9 +45,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 fread(MKV.tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
                 MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS            
                 MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
-                MKV->reg[CS] = MKV->tabla_seg[0] << 8;                          //inicializo el CS en los 8 MSB
-                MKV->reg[DS] = MKV->tabla_seg[1]+0x00010000;                    //Inicializo del DS una posicion mas del CS
-                MKV->reg[IP] = MKV->reg[CS];
+               
 
 
                  while (fread(MKV.mem[MKV->reg[CS]+desp], sizeof(unsigned char), 1, arch) == 1)  //Guarda las instrucciones en el code segment
@@ -66,38 +64,57 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 void ejecucion(TipoMKV *MKV){
     inicializacion(nombre_arch,MKV);
     char instruccion;
-    short TopA,TopB;
-    void (*op2[16])(int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
-    void (*op1[9])(int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
-    while (MKV->codigo_error==0 && MKV->reg[IP]!=-1 ){   // mientas no exista un error o se lea un STOP o se termine la memoria
-            instruccion=MKV->mem[logifisi(MKV,MKV->reg[IP])];   // guardo la instruccion de donde apunta IP 
-          //if codinvalido
-          //    MKV->codigo_error=1;
-          //else
+    char TopA,TopB;
+    int dirfisica;
+    int shift;  
+    void (*Fops2[16])(int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
+    void (*Fops1[9])(int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
+    MKV->reg[CS] = MKV->tabla_seg[0] << 8;                          //inicializo el CS en los 8 MSB
+    MKV->reg[DS] = MKV->tabla_seg[1]+0x00010000;                    //Inicializo del DS una posicion mas del CS
+    MKV->reg[IP] = MKV->reg[CS];
+    while (MKV->codigo_error==0 && MKV->reg[IP]!=-1 ){   // mientas no exista un error o se termine la memoria
 
-            MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC
-            if (MKV->reg[OPC]==0x0F){                       // STOP
-                //termina el programa
-            }
-            else
-                if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){        //dos operandos
-                    //saco opA y opB a chequear como se hace
-                    git 
-                    MKV->reg[OP1]=MKV->mem[logifisi(MKV,MKV->reg[IP]>>4)]; // me desplazo una celda de la memoria para sacar opA desde IP
-                    TopA=instruccion & MASC_TOPA;
-                    MKV->reg[OP2]=MKV->mem[logifisi(MKV,MKV->reg[IP]>>8)]; // me desplazo dos celda de la memoria para sacar opB desde IP
-                    TopB=instruccion & MASC_TOPB;
-                    
-                    op2[instruccion & 0x0F](MKV->reg[OP1],Topa,MKV->reg[OP2],Topb); //deberiamos cambiar la sintaxis de op2, puede confundirse con el valor del operando 1
-
-
-                }
-                else
-                    if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x08){    //un operando
-                        
+        dirfis=logifisi(MKV,MKV->reg[IP]);
+        if (dirfis==-1)
+        MKV->codigo_error=3;            //error: fallo de segmento
+        else{         
+            instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP 
+            if (codinvalido(instruccion))     // error: Codigo invalido
+                MKV->codigo_error=1;
+            else{     
+                MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC 
+                if (MKV->reg[OPC]==0x0F)                       // STOP
+                    MKV->reg[IP]=-1;    
+                else{              
+                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){        //dos operandos (testeado)
+                        getOperandos(MKV,instruccion,dirfis,'a');
+                        getOperandos(MKV,instruccion,dirfis,'b');
+                        cambioip(MKV,TopA,TopB);
+                        Fops2[instruccion & 0x0F](escopeta(MKV->reg[OP1]),TopA,escopeta(MKV->reg[OP2]),TopB);   
                     }
+                    else
+                        if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x08){    //un operando
+                            getOperandos(MKV,instruccion,dirfis,'b');
+                            MKV->reg[OPA]=MKV->reg[OPB];    //por especificacion de la catedra
+                            Fops1[instruccion](escopeta(MKV->reg[OPA]),TopA);                        
+                        }          
+                }
+            }
+        }
+
+
+
     }
+    verificaerrores(MKV->codigo_error);
+
+}
 
 
 }
- // defini la func de logifisi en operaciones_generales.c
+
+int getOP(TipoMKV MKV,char op){
+    int i=MKV->reg[OPC]>>
+    
+
+}
+
