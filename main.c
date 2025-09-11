@@ -45,13 +45,8 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 fread(MKV.tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
                 MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS            
                 MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
-               
-
-
                  while (fread(MKV.mem[MKV->reg[CS]+desp], sizeof(unsigned char), 1, arch) == 1)  //Guarda las instrucciones en el code segment
-                     desp++;  
-                
-                 
+                     desp++;    
                  fclose(arch);
             } 
             else
@@ -69,7 +64,7 @@ void ejecucion(TipoMKV *MKV){
     int shift;  
     void (*Fops2[16])(int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
     void (*Fops1[9])(int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
-    MKV->reg[CS] = MKV->tabla_seg[0] << 8;                          //inicializo el CS en los 8 MSB
+    MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
     MKV->reg[DS] = MKV->tabla_seg[1]+0x00010000;                    //Inicializo del DS una posicion mas del CS
     MKV->reg[IP] = MKV->reg[CS];
     while (MKV->codigo_error==0 && MKV->reg[IP]!=-1 ){   // mientas no exista un error o se termine la memoria
@@ -88,15 +83,16 @@ void ejecucion(TipoMKV *MKV){
                 else{              
                     if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){        //dos operandos (testeado)
                         getOperandos(MKV,instruccion,dirfis,'a');
+                        //obs: hay que comprobar el cambio de dirfisica
                         getOperandos(MKV,instruccion,dirfis,'b');
                         cambioip(MKV,TopA,TopB);
-                        Fops2[instruccion & 0x0F](escopeta(MKV->reg[OP1]),TopA,escopeta(MKV->reg[OP2]),TopB);   
+                        Fops2[instruccion & 0x0F](escopeta(MKV->reg[OP1]),(instruccion & MASC_TOPA) >> 4,escopeta(MKV->reg[OP2]),(instruccion & MASC_TOPB) >> 6);   
                     }
                     else
                         if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x08){    //un operando
                             getOperandos(MKV,instruccion,dirfis,'b');
                             MKV->reg[OPA]=MKV->reg[OPB];    //por especificacion de la catedra
-                            Fops1[instruccion](escopeta(MKV->reg[OPA]),TopA);                        
+                            Fops1[instruccion](escopeta(MKV->reg[OPA]),instruccion & MASC_TOPB) >> 6;                        
                         }          
                 }
             }
@@ -112,9 +108,4 @@ void ejecucion(TipoMKV *MKV){
 
 }
 
-int getOP(TipoMKV MKV,char op){
-    int i=MKV->reg[OPC]>>
-    
-
-}
 
