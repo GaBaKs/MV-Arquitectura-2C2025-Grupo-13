@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "mascaras.h"
 
 generavectornmemo(Tmnemo Vmnemo)
 {
@@ -23,9 +24,9 @@ generavectornmemo(Tmnemo Vmnemo)
     Vmnemo[DS].mnemonico="DS";   //27
 }
 
-int logifisi(tipoMKV MKV,int dirlog){ 
+int logifisi(TipoMKV MKV,int dirlog){ 
     int dirfis,segmento,offset;
-    segmento=dirlog>>16;
+    segmento=dirlog>>16; 
     offset=dirlog & 0x0000FFFF;
         if (segmento==0){ //Segmento de codigo 
             dirfis=MKV.tabla_seg[0]+offset;//Direccion fisica = base CS + direccion logica
@@ -77,53 +78,68 @@ int codinvalido(char instruccion){
         return 0;
 }
 
-void getOperandos(TipoMKV *MKV,char instruccion,int dirfis, char Top){
+/*void getOperandos(TipoMKV *MKV,char instruccion,int dirfis, char Top){
     MKV->reg[OPB]=0;
-    MKV->reg[OPA]=0; 
+    //MKV->reg[OPA]=0; 
     if  (Top =='a')       
         TopB=instruccion & MASC_TOPA >> 4;
     else
         TopB=instruccion & MASC_TOPB >> 6;
-            MKV->reg[OPB]=TopB;
-            if (TopB==1)
-                MKV->reg[OPB]<<=16;
-            else
-                if (TopB==2)
-                    MKV->reg[OPB]<<=8;
-            for (int i=0;i<TopB;i++){
-                MKV->reg[OPB]=MKV->reg[OPB]<<8; 
-                MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
-            }
-}                       
+    MKV->reg[OPB]=TopB;
+    if (TopB==1)
+        MKV->reg[OPB]<<=16;
+    else
+        if (TopB==2)
+            MKV->reg[OPB]<<=8;
+        else
+            if (TopB==3)
+                for (int i=0;i<TopB;i++){
+                    MKV->reg[OPB]=MKV->reg[OPB]<<8; 
+                    MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
+                }
+}   */                    
 
-/*void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
-    MKV->reg[OPB]=0;
-    MKV->reg[OPA]=0;                
-    TopA=instruccion & MASC_TOPA >> 4;
-    TopB=instruccion & MASC_TOPB >> 6;
+void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){              
+    int TopA,TopB;
+        TopA=instruccion & MASC_TOPA >> 4; 
+        TopB=instruccion & MASC_TOPB >> 6; 
+        if (dirfis+TopA+TopB+1<=MKV->tabla_seg[2]){
             MKV->reg[OPB]=TopB;
             if (TopB==1)
-                MKV->reg[OPB]<<=16;
+                MKV->reg[OPB]<<=16; // 00 00 00 01 ---> 00 01 00 00
             else
                 if (TopB==2)
-                    MKV->reg[OPB]<<=8;
+                    MKV->reg[OPB]<<=8; // 00 00 00 02 ---> 00 00 02 00  
+            
             for (int i=0;i<TopB;i++){
                 MKV->reg[OPB]=MKV->reg[OPB]<<8; 
                 MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
             }
-                    MKV->reg[OPA]=TopA;
-            if (TopA==1)
-                MKV->reg[OPA]<<=16;
-            else
-                if (TopA==2)
-                    MKV->reg[OPA]<<=8;
+            MKV->reg[OPA]=TopA;
+            switch (TopA){
+
+                case 0: MKV->reg[OPA]=MKV->reg[OPB];
+                        break;
+
+                case 1:MKV->reg[OPA]<<=16;
+                        break;
+
+                case 2: MKV->reg[OPA]<<=8;
+                        break;
+
+                default: break;
+            }
             for (int i=0;i<TopA;i++){
-                MKV->reg[OPA]=MKV->reg[OPA]<<8; 
-                MKV->reg[OPA]+=MKV->mem[TopB+dirfis+1+i];
-                
-            }   
-}     
-  */
+                        MKV->reg[OPA]=MKV->reg[OPA]<<8; 
+                        MKV->reg[OPA]+=MKV->mem[TopB+dirfis+1+i];   
+            } 
+        }
+        else
+            MKV->codigo_error=3;  
+}        
+       
+
+  
 
 void verificaerrores(int codigo_error){
     switch (codigo_error){

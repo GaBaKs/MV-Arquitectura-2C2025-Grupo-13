@@ -59,11 +59,11 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 void ejecucion(TipoMKV *MKV){
     inicializacion(nombre_arch,MKV);
     char instruccion;
-    char TopA,TopB;
+    int TopA,TopB;
     int dirfisica;
     int shift;  
-    void (*Fops2[16])(int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
-    void (*Fops1[9])(int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
+    void (*Fops2[16])(TipoMKV *, int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
+    void (*Fops1[9])(TipoMKV *,int,int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT};
     MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
     MKV->reg[DS] = MKV->tabla_seg[1]+0x00010000;                    //Inicializo del DS una posicion mas del CS
     MKV->reg[IP] = MKV->reg[CS];
@@ -77,29 +77,26 @@ void ejecucion(TipoMKV *MKV){
             if (codinvalido(instruccion))     // error: Codigo invalido
                 MKV->codigo_error=1;
             else{     
-                MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC 
+                MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC
+                getOperandos(MKV,instruccion,dirfis); 
                 if (MKV->reg[OPC]==0x0F)                       // STOP
                     MKV->reg[IP]=-1;    
                 else{              
-                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){        //dos operandos (testeado)
-                        getOperandos(MKV,instruccion,dirfis,'a');
-                        //obs: hay que comprobar el cambio de dirfisica
-                        getOperandos(MKV,instruccion,dirfis,'b');
-                        cambioip(MKV,TopA,TopB);
-                        Fops2[instruccion & 0x0F](escopeta(MKV->reg[OP1]),(instruccion & MASC_TOPA) >> 4,escopeta(MKV->reg[OP2]),(instruccion & MASC_TOPB) >> 6);   
+                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos (testeado)
+                        TopA=instruccion & MASC_TOPA >> 4; 
+                        TopB=instruccion & MASC_TOPB >> 6;         
+                        cambioip(MKV,TopA,TopB); 
+                        Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);   
                     }
                     else
                         if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x08){    //un operando
-                            getOperandos(MKV,instruccion,dirfis,'b');
-                            MKV->reg[OPA]=MKV->reg[OPB];    //por especificacion de la catedra
-                            Fops1[instruccion](escopeta(MKV->reg[OPA]),instruccion & MASC_TOPB) >> 6;                        
+                            TopA=instruccion & MASC_TOPB >> 6;
+                            SWAP(MKV,opA,topA,opB,TopB) //MKV->reg[OPA]=MKV->reg[OPB];    //por especificacion de la catedra / SWAP
+                            Fops1[instruccion](MKV,escopeta(MKV->reg[OPA]),TopA);                        
                         }          
                 }
             }
         }
-
-
-
     }
     verificaerrores(MKV->codigo_error);
 

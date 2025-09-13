@@ -1,3 +1,6 @@
+#include "TDA.h"
+#include "mascaras.h"
+
 void NZ_CC(int valor, TipoMKV *MKV){
     MKV->reg[CC]=0;
     if (valor==0)
@@ -7,11 +10,13 @@ void NZ_CC(int valor, TipoMKV *MKV){
             MKV->reg[CC]|=0x80000000; // setea el bit N 1000 0000 0000 0000 0000 0000 0000 0000
 }   //lo afectan ADD, SUB, MUL, DIV, CMP, AND, OR, XOR, SHL, SHR, SAR, NOT
 
-void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
+
+
+/*void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
     int valor,direccionF;
     //obtengo el valor de opB
-    direccionF=logifisi         00 00 00 00 | valor leido
-    switch (TopB){
+   // direccionF=logifisi(MKV,dirlog) ;      // / 00 00 00 00 | valor leido
+    /*switch (TopB){
         case 0x01: //registro
             valor=Consigue_Valor(MKV->reg[OPB];
             break;
@@ -24,14 +29,14 @@ void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
             break;
        
     }
-    valorB=Consigue_Valor(MKV->reg[OPB]; // int 
-    }
+    //valorB=Consigue_Valor(MKV->reg[OPB]; // int 
+    
     //guardo el valor en opA
     switch (TopA){
         case 0x01: //registro
-            MKV->reg[opA]=valor;
+            MKV->reg[opA]=opB;
             break;
-        case 0x03:{//direccion de memoria
+        case 0x03://direccion de memoria
             if ((direccionF=logifisi(MKV,0x00010000+opA))==-1){ 
                 MKV->codigo_error=3; //Fallo de segmento
                 return;
@@ -39,7 +44,6 @@ void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
             else
                 MKV->mem[direccionF]=valor;  
             break;
-        default:
         case 0x02: //valor inmediato
             MKV->codigo_error=1; //Error de opracion invalida
             break;
@@ -47,11 +51,44 @@ void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
             MKV->mem[logifisi(MKV,MKV->reg[DS]+MKV->reg[opA])]=valor;
             break;
     }
-}  
+}  */
 
-void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){ //hacer bien 
-   
-}  
+int get_direccion_A(TipoMKV MKV,int opA,int TopA){
+    int dirfis;
+    //mov[reg + cte ],opb / mov [cte],opb / mov [reg],opb contemplar estos casos 
+    int offset=0,cod; // para tipo memoria
+    if (TopA==3){
+        offset= opA & MASC_OFFMOV;  //devuelve el offset
+        cod = (opA >> 16) & MASC_CODMOV; 
+    }
+    else   
+        cod=opA; 
+    if((dirfis=logifisi(MKV,MKV->reg[cod]))!=-1)
+        return offset+dirfis;
+    else{
+        verificaerrores(3);
+    }    
+
+}
+
+
+void MOV(TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //hacer bien 
+    int dirfis,i;
+    int offset,cod; // para tipo memoria
+
+    int valorB=get_Valor(opB,TopB);
+        if (TopA==3){
+            dirfis=get_direccion_A(*MKV,opA,TopA);
+            if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
+                for (i=CANTCELDAS;i<0;i--){ 
+                    MKV->mem[dirfis++]=(char)(valorB >> ((i-1)*8)) & 0x000000FF ; 
+                }
+        }
+        else
+            MKV->reg[opA]=valorB;
+}
+       
+ 
 
 void SHR(TipoMKV MKV, int opA, int opB, short TopA, short TopB){ //chequear
     int valor, direccionF;
@@ -123,4 +160,23 @@ void SHL(TipoMKV MKV, int opA, int opB, short TopA, short TopB){
                 //NI IDEA
             }
         }//
+}
+
+
+
+void SWAP(TipoMKV *MKV,int MKV->reg[OPA],int TopA,int MKV->reg[OPB],int TopB){
+
+    
+
+
+}
+
+void ADD(){
+
+}
+void MUL(){
+
+}
+void DIV(){
+
 }
