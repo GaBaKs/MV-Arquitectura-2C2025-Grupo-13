@@ -36,8 +36,8 @@ int logifisi(TipoMKV MKV,int dirlog){
                 return -1;
         }
         else{
-            dirfis=MKV.tabla_seg[3]+offset; //Direccion fisica = base DS + direccion logica
-            if (dirfis>=0 && dirfis<=MKV.tabla_seg[4]) //Verifica que la direccion logica este dentro del segmento de datos       
+            dirfis=MKV.tabla_seg[2]+offset; //Direccion fisica = base DS + direccion logica
+            if (dirfis>=0 && dirfis<=MKV.tabla_seg[3]) //Verifica que la direccion logica este dentro del segmento de datos       
                 return dirfis;
             else
                 return -1;
@@ -78,26 +78,7 @@ int codinvalido(char instruccion){
         return 0;
 }
 
-/*void getOperandos(TipoMKV *MKV,char instruccion,int dirfis, char Top){
-    MKV->reg[OPB]=0;
-    //MKV->reg[OPA]=0; 
-    if  (Top =='a')       
-        TopB=instruccion & MASC_TOPA >> 4;
-    else
-        TopB=instruccion & MASC_TOPB >> 6;
-    MKV->reg[OPB]=TopB;
-    if (TopB==1)
-        MKV->reg[OPB]<<=16;
-    else
-        if (TopB==2)
-            MKV->reg[OPB]<<=8;
-        else
-            if (TopB==3)
-                for (int i=0;i<TopB;i++){
-                    MKV->reg[OPB]=MKV->reg[OPB]<<8; 
-                    MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
-                }
-}   */                    
+                   
 
 void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){              
     int TopA,TopB;

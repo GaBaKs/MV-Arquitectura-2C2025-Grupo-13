@@ -1,6 +1,6 @@
 #include "TDA.h"
 #include "mascaras.h"
-
+#include "Operaciones_Generales.c"
 void NZ_CC(int valor, TipoMKV *MKV){
     MKV->reg[CC]=0;
     if (valor==0)
@@ -71,12 +71,32 @@ int get_direccion_A(TipoMKV MKV,int opA,int TopA){
 
 }
 
+int get_Valor(TipoMKV *MKV,int op,int Top){
+
+
+    if (Top==1)
+        return MKV->reg[op];
+    else
+        if (Top==2)
+            return op;
+        else
+            if (Top==3){
+                int valor=0,aux;
+                int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFMOV;  //verificar
+                int dirfis=logifisi(*MKV,dirlog);
+                for (int i=0;i<4;i++){
+                   aux=MKV->mem[dirfis+1+i];
+                   valor+=aux<<(3-i)*8;
+                }
+                return valor;   
+            }   
+} 
 
 void MOV(TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //hacer bien 
     int dirfis,i;
     int offset,cod; // para tipo memoria
 
-    int valorB=get_Valor(opB,TopB);
+    int valorB=getValor(MKV,opB,TopB);
         if (TopA==3){
             dirfis=get_direccion_A(*MKV,opA,TopA);
             if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
