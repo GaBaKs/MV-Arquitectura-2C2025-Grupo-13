@@ -107,9 +107,71 @@ void MOV(TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //hacer bien
         else
             MKV->reg[opA]=valorB;
 }
-       
+
+//HICE ADD, SUB, MUL, DIV, SHR Y SHL HABRIA QUE VER SI VERIFICAR LAS DIRECCIONES DE MEMORIA OTRA VEZ O NO
+
+void ADD(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //ADD EBX, 7 -> SERIA COMO HACER MOV EBX, [EBX]+7
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA+= valorB;
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    NZ_CC(valorA,MKV);
+}
+
+void SUB(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SUB EBX, 5 -> SERIA COMO HACER MOV EBX, [EBX]-5
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA-= valorB;
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    NZ_CC(valorA,MKV);
+}
+
+void MUL(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //MUL EBX, 3 -> SERIA COMO HACER MOV EBX, [EBX]*3
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA*= valorB;
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    NZ_CC(valorA,MKV);
+}
+
+void DIV(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //DIV EDX, 8 -> SERIA COMO HACER MOV EBX, [EBX]/8
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    if(valorB != 0){
+        valorA = valorA DIV valorB; //PUSE DIV PORQUE ERA ENTERA LA DIVISION
+        MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+        NZ_CC(valorA,MKV);
+        MKV->reg[AC] = valorA % valorB; //LE PONGO EL RESTO AL AC, NO SE COMO LE PUSIMOS NOSOTROS
+    }
+    else
+        MKV->codigo_error = 2; //DIVISION POR 0
+}
+
+void SHR(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SHR ECX, 4 -> SERIA COMO HACER MOV ECX, [ECX] >> 4
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA = valorA >> valorB;
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT 
+    NZ_CC(valorA,MKV);
+}
+
+void SHL(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ 
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA = valorA << valorB;
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT 
+    NZ_CC(valorA,MKV);
+}
  
 
+
+/*
 void SHR(TipoMKV MKV, int opA, int opB, short TopA, short TopB){ //chequear
     int valor, direccionF;
     switch(TopB){
@@ -181,7 +243,7 @@ void SHL(TipoMKV MKV, int opA, int opB, short TopA, short TopB){
             }
         }//
 }
-
+*/
 
 
 void SWAP(TipoMKV *MKV,int MKV->reg[OPA],int TopA,int MKV->reg[OPB],int TopB){
@@ -191,9 +253,7 @@ void SWAP(TipoMKV *MKV,int MKV->reg[OPA],int TopA,int MKV->reg[OPB],int TopB){
 
 }
 
-void ADD(){
 
-}
 void MUL(){
 
 }
