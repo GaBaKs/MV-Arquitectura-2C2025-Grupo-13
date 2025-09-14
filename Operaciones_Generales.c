@@ -135,3 +135,9 @@ void verificaerrores(int codigo_error){
             break;  
     }
 }
+
+void cambialarmarmbr(TipoMKV * MKV,int dirlog,int dirfis,int valor){
+    MKV->reg[LAR]=dirlog;
+    MKV->reg[MAR]=0x00040000+dirfis;   //hardcodeo 4 bytes
+    MKV->reg[MBR]=valor;
+}

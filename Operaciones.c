@@ -1,7 +1,7 @@
 #include "TDA.h"
 #include "mascaras.h"
 #include "Operaciones_Generales.c"
-void NZ_CC(int valor, TipoMKV *MKV){
+void NZ_CC (int valor, TipoMKV *MKV){
     MKV->reg[CC]=0;
     if (valor==0)
         MKV->reg[CC] |= 0x40000000; // setea el bit Z 0100 0000 0000 0000 0000 0000 0000 0000
@@ -10,50 +10,7 @@ void NZ_CC(int valor, TipoMKV *MKV){
             MKV->reg[CC]|=0x80000000; // setea el bit N 1000 0000 0000 0000 0000 0000 0000 0000
 }   //lo afectan ADD, SUB, MUL, DIV, CMP, AND, OR, XOR, SHL, SHR, SAR, NOT
 
-
-
-/*void MOV(TipoMKV *MKV,int opA, short TopA, int opB, short TopB){
-    int valor,direccionF;
-    //obtengo el valor de opB
-   // direccionF=logifisi(MKV,dirlog) ;      // / 00 00 00 00 | valor leido
-    /*switch (TopB){
-        case 0x01: //registro
-            valor=Consigue_Valor(MKV->reg[OPB];
-            break;
-        case 0x03:{ //direccion de memoria
-            valor=Consigue_valor(MKV->mem[direccionF];
-            }
-            break;
-        case 0x02: //valor inmediato
-            valor=opB;
-            break;
-       
-    }
-    //valorB=Consigue_Valor(MKV->reg[OPB]; // int 
-    
-    //guardo el valor en opA
-    switch (TopA){
-        case 0x01: //registro
-            MKV->reg[opA]=opB;
-            break;
-        case 0x03://direccion de memoria
-            if ((direccionF=logifisi(MKV,0x00010000+opA))==-1){ 
-                MKV->codigo_error=3; //Fallo de segmento
-                return;
-            }
-            else
-                MKV->mem[direccionF]=valor;  
-            break;
-        case 0x02: //valor inmediato
-            MKV->codigo_error=1; //Error de opracion invalida
-            break;
-        case 0x00: //registro indirecto
-            MKV->mem[logifisi(MKV,MKV->reg[DS]+MKV->reg[opA])]=valor;
-            break;
-    }
-}  */
-
-int get_direccion_A(TipoMKV MKV,int opA,int TopA){
+int get_direccion_A (TipoMKV MKV,int opA,int TopA){
     int dirfis;
     //mov[reg + cte ],opb / mov [cte],opb / mov [reg],opb contemplar estos casos 
     int offset=0,cod; // para tipo memoria
@@ -71,9 +28,7 @@ int get_direccion_A(TipoMKV MKV,int opA,int TopA){
 
 }
 
-int get_Valor(TipoMKV *MKV,int op,int Top){
-
-
+int get_Valor (TipoMKV *MKV,int op,int Top){
     if (Top==1)
         return MKV->reg[op];
     else
@@ -92,7 +47,7 @@ int get_Valor(TipoMKV *MKV,int op,int Top){
             }   
 } 
 
-void MOV(TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //hacer bien 
+void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //testeado todo ok 
     int dirfis,i;
     int offset,cod; // para tipo memoria
 
@@ -108,50 +63,58 @@ void MOV(TipoMKV *MKV,int opA, int TopA, int opB, int TopB){ //hacer bien
             MKV->reg[opA]=valorB;
 }
 
-//HICE ADD, SUB, MUL, DIV, SHR Y SHL HABRIA QUE VER SI VERIFICAR LAS DIRECCIONES DE MEMORIA OTRA VEZ O NO
-
-void ADD(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //ADD EBX, 7 -> SERIA COMO HACER MOV EBX, [EBX]+7
+void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     valorA+= valorB;
-    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
 }
 
-void SUB(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SUB EBX, 5 -> SERIA COMO HACER MOV EBX, [EBX]-5
+void SUB (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ 
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     valorA-= valorB;
-    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
 }
 
-void MUL(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //MUL EBX, 3 -> SERIA COMO HACER MOV EBX, [EBX]*3
+void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     valorA*= valorB;
-    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+    MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
 }
 
-void DIV(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //DIV EDX, 8 -> SERIA COMO HACER MOV EBX, [EBX]/8
+void DIV (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     if(valorB != 0){
-        valorA = valorA DIV valorB; //PUSE DIV PORQUE ERA ENTERA LA DIVISION
-        MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT ENTIENDO POR QUE IGUAL
+        valorA = (int) valorA / valorB;
+        MOV(MKV,opA,TopA,valorA,2);
         NZ_CC(valorA,MKV);
         MKV->reg[AC] = valorA % valorB; //LE PONGO EL RESTO AL AC, NO SE COMO LE PUSIMOS NOSOTROS
     }
-    else
-        MKV->codigo_error = 2; //DIVISION POR 0
+    else{
+        MKV->codigo_error = 2;
+        verificaerrores(MKV->codigo_error);
+    }    
 }
 
-void SHR(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SHR ECX, 4 -> SERIA COMO HACER MOV ECX, [ECX] >> 4
+void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ 
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA-= valorB;
+    NZ_CC(valorA,MKV);
+}
+
+void SAR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SHR ECX, 4 -> SERIA COMO HACER MOV ECX, [ECX] >> 4
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
@@ -160,7 +123,19 @@ void SHR(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SHR ECX, 4 -> SE
     NZ_CC(valorA,MKV);
 }
 
-void SHL(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ 
+void SHR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ //SHR ECX, 4 -> SERIA COMO HACER MOV ECX, [ECX] >> 4
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    for (int i=0;i<valorB;i++){
+        valorA>>=1;
+        valorA=valorA & 0b01111111111111111111111111111111;
+    }
+    MOV(MKV,opA,TopA,valorA,2); //EL 2 ES PORQUE ES INMEDIATO, ME LO TIRÓ COPILOT 
+    NZ_CC(valorA,MKV);
+}
+
+void SHL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){ 
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
@@ -169,94 +144,62 @@ void SHL(TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     NZ_CC(valorA,MKV);
 }
  
-
-
-/*
-void SHR(TipoMKV MKV, int opA, int opB, short TopA, short TopB){ //chequear
-    int valor, direccionF;
-    switch(TopB){
-        case 0x01: //registro
-            valor = MKV->reg[opB];
-            break;
-        case 0x02: //inmediato
-            valor = opB;
-            break;
-        case 0x03:{ //direccion de memoria
-            direccionF = -1;
-            logifisi(MKV,0x00010000+opB,&direccionF);
-            if(direccionF != -1) //la direccion fisica del opB es valida
-                valor = Consigue_valor(MKV->mem[direccionF]);
-            else
-                //NI IDEA
-        } 
-    }
-        switch (TopA){
-        case 0x01: //registro
-            MKV->reg[opB] = MKV->[opB] >> valor;
-            break;
-        case 0x02: //inmediato
-            opA = opA >> valor;
-            break;
-        case 0x03: { //direccion de memoria
-            direccionF = -1;
-            logifisi(MKV,0x00010000+opA,&direccionF);
-            if(direccionF != -1) //la direccion fisica del opB es valida
-                MKV->mem[direccionF] = MKV->mem[direccionF] >> valor; // REVISAR
-            else
-                //NI IDEA
-            }
-        }
+void AND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA &= valorB;
+    MOV(MKV,opA,TopA,valorA,2);
+    NZ_CC(valorA,MKV);
 }
 
-void SHL(TipoMKV MKV, int opA, int opB, short TopA, short TopB){
-    int valor, direccionF;
-    switch(TopB){
-        case 0x01: //registro
-            valor = MKV->reg[opB];
-            break;
-        case 0x02: //inmediato
-            valor = opB;
-            break;
-        case 0x03:{ //direccion de memoria
-            direccionF = -1;
-            logifisi(MKV,0x00010000+opB,&direccionF);
-            if(direccionF != -1) //la direccion fisica del opB es valida
-                valor = Consigue_valor(MKV->mem[direccionF]);
-            else
-                //NI IDEA
-        } 
-    }
-        switch (TopA){
-        case 0x01: //registro
-            MKV->reg[opB] = MKV->[opB] << valor;
-            break;
-        case 0x02: //inmediato
-            opA = opA << valor;
-            break;
-        case 0x03: { //direccion de memoria
-            direccionF = -1;
-            logifisi(MKV,0x00010000+opA,&direccionF);
-            if(direccionF != -1) //la direccion fisica del opB es valida
-                MKV->mem[direccionF] = MKV->mem[direccionF] << valor; // REVISAR
-            else
-                //NI IDEA
-            }
-        }//
+void OR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA |= valorB;
+    MOV(MKV,opA,TopA,valorA,2);
+    NZ_CC(valorA,MKV);
 }
-*/
 
+void XOR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA ^= valorB;
+    MOV(MKV,opA,TopA,valorA,2);
+    NZ_CC(valorA,MKV);
+}
 
 void SWAP(TipoMKV *MKV,int MKV->reg[OPA],int TopA,int MKV->reg[OPB],int TopB){
+}
 
+void LDH (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB) & MASC_LDL ; // que pasa si no dan un inmediato??
+    valorA = get_Valor(MKV,opA,TopA);
+    valorA &=MASC_LDH; 
+    valorA|=valorB<<16;
+    MOV(MKV,opA,TopA,valorA,2);
+}
+
+void LDL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB) & MASC_LDL ; // que pasa si no dan un inmediato??
+    valorA = get_Valor(MKV,opA,TopA); 
+    valorA &=MASC_LDL; 
+    valorA|=valorB;
+    MOV(MKV,opA,TopA,valorA,2);
+}
+
+void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
+    srand();
+    int valorB, valorA;
+    valorB = get_Valor(MKV,opB,TopB);
+    valorA = rand() % (valB + 1); //rand() genera un numero aleatorio y al hacerle % (valB + 1) se establece el rango entre 0 y valB.    
+    MOV(MKV,opA,TopA,valorA,2);
+}
     
 
 
-}
 
-
-void MUL(){
-
-}
-void DIV(){
-
-}
