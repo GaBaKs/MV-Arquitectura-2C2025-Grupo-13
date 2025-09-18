@@ -100,7 +100,7 @@ void SHR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
-    valorA[0]=0;
+    valorA=0x7FFFFFFF;
     valorA>>=valorB;
     MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
@@ -174,15 +174,33 @@ void LDH (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
 
 
 void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
-    srand();
+    //srand(); tengo que ponerle mas valores
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
-    valorA = rand() % (valB + 1); //rand() genera un numero aleatorio y al hacerle % (valB + 1) se establece el rango entre 0 y valB.    
+    valorA = rand() % (valorB + 1); //rand() genera un numero aleatorio y al hacerle % (valB + 1) se establece el rango entre 0 y valB.    
     MOV(MKV,opA,TopA,valorA,2);
 }
     
 void SYS(TipoMKV *MKV, int opA, int TopA){
+    int cantCeldas,i,dirfis,j=0,tam,dato;
+    dirfis=logifisi(*MKV,MKV->reg[EDX]);
+    if(opA==1){
 
+    }
+    else{
+        tam=(MKV->reg[ECX]>>16)&0x0000FFFF;
+        cantCeldas=escopeta2bytes(MKV->reg[ECX]);
+        for(i=dirfis;i<cantCeldas*tam;i++){
+            if (j<=tam){
+                dato+=MKV->mem[i];
+                j++;
+            }
+            else{
+                //dato conseguid, tenes que ver como printeas, formato->> [i] dato
+            }
+
+        }
+    }
 }
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
@@ -196,7 +214,7 @@ void JMP(TipoMKV *MKV, int opA, int TopA){
 void JZ(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[1]] == 1)
+        if((MKV->reg[CC]&MASC_Z) == 1)
             MKV->reg[IP]=valor;
     }        
     else
@@ -206,7 +224,7 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
 void JP(TipoMKV *MKV, int opA, int TopA){ 
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[0]] == 0 && MKV->reg[CC[1]] == 0)
+        if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0)//if(MKV->reg[CC[0]] == 0 && MKV->reg[CC[1]] == 0)
             MKV->reg[IP]=valor;
     }        
     else
@@ -216,7 +234,7 @@ void JP(TipoMKV *MKV, int opA, int TopA){
 void JN(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[0]] == 1 && MKV->reg[CC[1]] == 0)
+        if((MKV->reg[CC]&MASC_N) == 1 && (MKV->reg[CC]&MASC_Z) == 0) // los cambie ya que son int y no vectores
             MKV->reg[IP]=valor;
     }        
     else
@@ -226,7 +244,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
 void JNZ(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[1]] == 0)
+        if((MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=valor;
     }        
     else
@@ -236,7 +254,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
 void JNP(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[0]] == 1 || MKV->reg[CC[1]] == 1)
+        if((MKV->reg[CC]&MASC_N) == 1 || (MKV->reg[CC]&MASC_Z) == 1)
             MKV->reg[IP]=valor;
     }        
     else
@@ -246,7 +264,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
 void JNN(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if(MKV->reg[CC[0]] == 0)
+        if((MKV->reg[CC]&MASC_N) == 0)
             MKV->reg[IP]=valor;
     }        
     else

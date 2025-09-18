@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include "mascaras.h"
-
-generavectornmemo(Tmnemo Vmnemo)
+#include "TDA.h"
+#include "Codigos_Registros.h"
+/*generavectornmemo(Tmnemo Vmnemo)
 {
     Vmnemo[LAR].mnemonico="LAR"; //0
     Vmnemo[MAR].mnemonico="MAR"; //1
@@ -23,44 +24,20 @@ generavectornmemo(Tmnemo Vmnemo)
     Vmnemo[CS].mnemonico="CS";   //26
     Vmnemo[DS].mnemonico="DS";   //27
 }
-
-
-void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
-    int aux=0;
-   
-    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFMOV;
-    int auxL=logifisi(MKV,dirlog);
-    MKV->reg[LAR]=dirlog;
-    if (auxL!=-1)
-        MKV->reg[MAR]=0x00040000+auxL; //HARDCODEADO
-    else
-        verificaerrores(3);             // Error de segmento
-   
+*/
+void verificaerrores(int codigo_error){
+    switch (codigo_error){
+        case 1:
+            printf("ERROR: Instruccion invalida");
+            break;
+        case 2:
+            printf("ERROR: Division por cero");
+            break;
+        case 3:
+            printf("ERROR: Fallo de segmento");  
+            break;  
+    }
 }
-
-void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
-     int max,valor;
-     int dirfis=MKV->reg[MAR] & MASC_MARL;
-     max=MKV->reg[MAR] & MASC_MARH;
-     for (int i=0;i<max;i++){
-                   aux=MKV->mem[dirfis+1+i];
-                   valor+=aux<<(3-i)*8;
-                }
-    MKV->reg[MBR]=valor;
-
-}
-
-void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la direc de MAR
-    int valor=MKV->reg[MBR];
-    dirfis=MKV->reg[MAR] & MASC_MARL;
-if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
-                for (int i=CANTCELDAS;i<0;i--){ 
-                    MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
-                }
-else
-    verificaerrores(3); //fallo de segmento
-}
-
 int logifisi(TipoMKV MKV,int dirlog){ 
     int dirfis,segmento,offset;
     segmento=dirlog>>16; 
@@ -80,6 +57,42 @@ int logifisi(TipoMKV MKV,int dirlog){
                 return -1;
         }
 }
+void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
+    int aux=0;
+   
+    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFMOV;
+    int auxL=logifisi(*MKV,dirlog);
+    MKV->reg[LAR]=dirlog;
+    if (auxL!=-1)
+        MKV->reg[MAR]=0x00040000+auxL; //HARDCODEADO
+    else
+        verificaerrores(3);             // Error de segmento
+   
+}
+
+void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
+     int max,valor,aux;
+     int dirfis=MKV->reg[MAR] & MASC_MARL;
+     max=MKV->reg[MAR] & MASC_MARH;
+     for (int i=0;i<max;i++){
+                   aux=MKV->mem[dirfis+1+i];
+                   valor+=aux<<(3-i)*8;
+                }
+    MKV->reg[MBR]=valor;
+}
+
+void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la direc de MAR
+    int dirfis,valor=MKV->reg[MBR];
+    dirfis=MKV->reg[MAR] & MASC_MARL;
+if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
+                for (int i=CANTCELDAS;i<0;i--){ 
+                    MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
+                }
+else
+    verificaerrores(3); //fallo de segmento
+}
+
+
 
 void cambioip(TipoMKV *MKV,int TopA,int TopB){
     int suma=1;
@@ -105,6 +118,11 @@ void cambioip(TipoMKV *MKV,int TopA,int TopB){
 int escopeta(int corredera){
     corredera<<=8;  //chk
     corredera>>=8;  //chk
+    return corredera;
+}
+int escopeta2bytes(int corredera){
+    corredera<<=16;  //chk
+    corredera>>=16;  //chk
     return corredera;
 }
 
@@ -153,22 +171,10 @@ void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
             } 
         }
         else
-            MKV->codigo_error=3;  
+           verificaerrores(3);  
 }        
        
 
   
 
-void verificaerrores(int codigo_error){
-    switch (codigo_error){
-        case 1:
-            printf("ERROR: Instruccion invalida");
-            break;
-        case 2:
-            printf("ERROR: Division por cero");
-            break;
-        case 3:
-            printf("ERROR: Fallo de segmento");  
-            break;  
-    }
-}
+
