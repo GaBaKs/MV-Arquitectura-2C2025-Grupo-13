@@ -13,7 +13,7 @@ int main(){
     return 0;
 }
 
-
+ 
 
 int verifica_cabecera(unsigned char cabecera[5]){ //Verifica la version de la cabecera
     int i=0;
@@ -54,7 +54,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
         }
 }
 
-
+ 
 
 void ejecucion(TipoMKV *MKV){
     inicializacion(nombre_arch,MKV);
@@ -102,7 +102,5 @@ void ejecucion(TipoMKV *MKV){
 
 }
 
-
-}
 
 

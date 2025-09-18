@@ -24,6 +24,43 @@ generavectornmemo(Tmnemo Vmnemo)
     Vmnemo[DS].mnemonico="DS";   //27
 }
 
+
+void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
+    int aux=0;
+   
+    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFMOV;
+    int auxL=logifisi(MKV,dirlog);
+    MKV->reg[LAR]=dirlog;
+    if (auxL!=-1)
+        MKV->reg[MAR]=0x00040000+auxL; //HARDCODEADO
+    else
+        verificaerrores(3);             // Error de segmento
+   
+}
+
+void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
+     int max,valor;
+     int dirfis=MKV->reg[MAR] & MASC_MARL;
+     max=MKV->reg[MAR] & MASC_MARH;
+     for (int i=0;i<max;i++){
+                   aux=MKV->mem[dirfis+1+i];
+                   valor+=aux<<(3-i)*8;
+                }
+    MKV->reg[MBR]=valor;
+
+}
+
+void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la direc de MAR
+    int valor=MKV->reg[MBR];
+    dirfis=MKV->reg[MAR] & MASC_MARL;
+if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
+                for (int i=CANTCELDAS;i<0;i--){ 
+                    MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
+                }
+else
+    verificaerrores(3); //fallo de segmento
+}
+
 int logifisi(TipoMKV MKV,int dirlog){ 
     int dirfis,segmento,offset;
     segmento=dirlog>>16; 
@@ -134,10 +171,4 @@ void verificaerrores(int codigo_error){
             printf("ERROR: Fallo de segmento");  
             break;  
     }
-}
-
-void cambialarmarmbr(TipoMKV * MKV,int dirlog,int dirfis,int valor){
-    MKV->reg[LAR]=dirlog;
-    MKV->reg[MAR]=0x00040000+dirfis;   //hardcodeo 4 bytes
-    MKV->reg[MBR]=valor;
 }

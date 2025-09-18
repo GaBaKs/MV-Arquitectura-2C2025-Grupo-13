@@ -3,5 +3,7 @@
 #define MASC_TOPB  0xC0      //1100 0000
 #define MASC_CODMOV 0x1F     //0001 1111
 #define MASC_OFFMOV 0x00FFFF //0000 0000 1111 1111 1111 1111
-#define MASC_LDH 0x0000FFFF  //0000 0000 0000 0000 1111 1111 1111 1111 los primeros dos bytes los vacio
-#define MASC_LDL 0xFFFF0000  //1111 1111 1111 1111 0000 0000 0000 0000 los ultimos dos bytes los vacio
+#define MASC_LDL 0x0000FFFF  //0000 0000 0000 0000 1111 1111 1111 1111 los primeros dos bytes los vacio
+#define MASC_LDH 0xFFFF0000  //1111 1111 1111 1111 0000 0000 0000 0000 los ultimos dos bytes los vacio
+#define MASC_MARL 0x0000FFFF  // 0000 0000 1111 1111
+#define MASC_MARH 0xFFFF0000  // 1111 1111 0000 0000

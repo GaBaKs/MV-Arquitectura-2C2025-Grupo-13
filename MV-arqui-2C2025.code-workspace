@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../Facultad"
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"tda.h": "c",
+			"mascaras.h": "c"
+		}
+	}
+}

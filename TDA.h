@@ -5,7 +5,6 @@
 typedef struct{
     unsigned int reg[REGISTROS];           // Cantidad de registros
     unsigned char mem[MEMORIA];            // Cantidad de memoria
-    unsigned char codigo_error;            // Codigo de error
     unsigned short tabla_seg[4];           
 } TipoMKV;
 
