@@ -4,6 +4,7 @@
 #include "mascaras.h"
 #include "TDA.h"
 #include "Codigos_Registros.h"
+#include "math.h"
 /*generavectornmemo(Tmnemo Vmnemo)
 {
     Vmnemo[LAR].mnemonico="LAR"; //0
@@ -36,6 +37,8 @@ void verificaerrores(int codigo_error){
         case 3:
             printf("ERROR: Fallo de segmento");  
             break;  
+        case 4:
+            printf("ERROR: FORMATO NO ESPECIFICADO");
     }
 }
 int logifisi(TipoMKV MKV,int dirlog){ 
@@ -60,7 +63,7 @@ int logifisi(TipoMKV MKV,int dirlog){
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
    
-    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFMOV;
+    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFSET;
     int auxL=logifisi(*MKV,dirlog);
     MKV->reg[LAR]=dirlog;
     if (auxL!=-1)
@@ -85,7 +88,7 @@ void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la di
     int dirfis,valor=MKV->reg[MBR];
     dirfis=MKV->reg[MAR] & MASC_MARL;
 if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
-                for (int i=CANTCELDAS;i<0;i--){ 
+                for (int i=CANTCELDAS;i>0;i--){ 
                     MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
                 }
 else
@@ -175,6 +178,23 @@ void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
 }        
        
 
-  
+int bintoint(char str[33]){
+    int j,num=0,k=-1;
+    
+    
+    for (j=strlen(str)-1;j>0;j--){
+        ++k;
+        num+= ((int)(str[j]-'0'))*pow(2,k); 
+    }
+    if (str[0]=='1'){
+        num=~num;
+        num++;
+    }
+    return num;
+}
 
-
+void print_bin(int n) {
+    for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
+        printf("%d ", (n >> i) & 1);
+    }
+}

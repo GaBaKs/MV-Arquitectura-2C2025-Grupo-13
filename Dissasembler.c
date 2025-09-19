@@ -2,15 +2,65 @@
 #include <stdlib.h>
 #include <string.h>
 #include "Dissasembler.h" //Vacio, los prototipos
-
+#include "TDA.h"
+#include "mascaras.h"
+#include "Operaciones_Generales.c"
 
 // hacer 3 typedef separados
 
+void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB, int TopA, int TopB){              
+        opA=0;
+        opB=0;
+        for (int i=0;i<TopB;i++){ 
+            opB+=MKV.mem[dirfis+1+i];
+            opB= *opB<<8;  
+            printf("%X ",MKV.mem[dirfis+1+i]);
+        }
+        if (TopA==0)
+            opA=opB;
+        else
+            for (int i=0;i<TopA;i++){                        
+                        opA+=MKV.mem[TopB+dirfis+1+i]; 
+                        opA=*opA<<8; 
+                        printf("%X ",MKV.mem[TopB+dirfis+1+i]);  
+            } 
+       
+}
 
+char* devuelveRegistro(unsigned char car){
+    switch(car){
+        case 0x1A:
+            return "CS";
+            break;
+        case 0x1B:  
+            return "DS";
+            break;
+        case 0x10:
+            return "AC";
+            break;
+        case 0x0A:
+            return "EAX";
+            break;
+        case 0x0B:
+            return "EBX";
+            break;
+        case 0x0C:
+            return "ECX";
+            break;
+        case 0x0D:
+            return "EDX";
+            break;
+        case 0x0E:
+            return "EEX";
+            break;
+        case 0x0F:
+            return "EFX";
+    }
+}
 
 void imprimeMnemonico(unsigned char cod){ 
 
-    switch(orden){
+    switch(cod){
         case 0x00: 
             printf("SYS ");
             break;
@@ -48,22 +98,22 @@ void imprimeMnemonico(unsigned char cod){
             printf("SUB ");
             break;
         case 0x13: 
-            printf("SWAP ");
+            printf("MUL ");
             break; 
         case 0x14: 
-            printf("MUL ");
-            break;
-        case 0x15: 
             printf("DIV ");
             break;
-        case 0x16: 
+        case 0x15: 
             printf("CMP ");
             break;
-        case 0x17: 
+        case 0x16: 
             printf("SHL ");
             break;
-        case 0x18: 
+        case 0x17: 
             printf("SHR ");
+            break;
+        case 0x18: 
+            printf("SAR ");
             break;
         case 0x19: 
             printf("AND ");
@@ -92,8 +142,105 @@ void imprimeMnemonico(unsigned char cod){
     }
 }
 
-void imprimeTAB(){
-    printf("\t \t | ");  
+int nuevadirfis(int dirfis,int TopA,int TopB){
+    int suma=1;
+        if (TopA==0x01)
+            suma++;
+        else
+            if (TopA==0x10)
+                suma+=2;
+            else
+                if (TopA==0x11)
+                    suma+=3;     
+        if (TopB==0x01)
+            suma++;
+        else
+            if (TopB==0x10)
+                suma+=2;
+            else
+                if (TopB==0x11)
+                    suma+=3;
+        return dirfis+suma;
 }
 
+void imprimeTAB(char instruccion, int TopA,int TopB){
+
+     switch (TopA+TopB){
+            case 5:
+                printf("   ");
+                break;
+            case 4:
+                printf("      ");
+                break;
+            case 3:
+                printf("         ");
+                break;
+            case 2:
+                printf("            ");
+                break;
+            case 1:
+                printf("                  ");
+                break;
+        }
+        printf("   |  ");
+}
+
+void dissa(TipoMKV MKV){
+    int dirfis,instruccion,cod,opA,opB,TopA,TopB;
+    dirfis=logifisi(MKV,MKV.reg[CS]);
+    instruccion=MKV.mem[dirfis];
+    while(instruccion!=0x0F){
+        cod=instruccion & MASC_CODOP;
+        TopB=instruccion & MASC_TOPB >> 6; 
+        TopA=instruccion & MASC_TOPA >> 4; 
+        printf("[%X] %X ",dirfis,cod);
+        getOperandosDissa(MKV,instruccion,dirfis,&opA,&opB,TopA,TopB);
+        imprimeTAB(instruccion,TopA,TopB);
+        imprimeMnemonico(cod);
+        if (cod>=0x10 && cod<=0x1F){
+            if (TopA==3){
+                if (opA&MASC_OFFSET!=0)
+                    printf("\t[%s],",devuelveRegistro(opA&MASC_CODMEM>>16));
+                else
+                printf("\t[%s+%d],",devuelveRegistro(opA&MASC_CODMEM>>16),opA&MASC_OFFSET);
+            }
+            else
+                if (TopA==2)
+                    printf("\t \t%s,",devuelveRegistro(opA&MASC_CODMEM>>16));
+            if (TopB==3){
+                if (opB&MASC_OFFSET!=0)
+                    printf("\t[%s]",devuelveRegistro(opB&MASC_CODMEM>>16));
+                else
+                printf("\t[%s+%d]",devuelveRegistro(opB&MASC_CODMEM>>16),opB&MASC_OFFSET);
+            }
+            else
+                if (TopB==2)
+                    printf("\t \t%s",devuelveRegistro(opB&MASC_CODMEM>>16));
+                else
+                    printf("\t \t%d",opB);       
+        }
+        else{//de un operando
+            switch (TopA){
+            case 3:
+                if (opA&MASC_OFFSET!=0)
+                    printf("\t[%s]",devuelveRegistro(opA&MASC_CODMEM>>16));
+                else
+                printf("\t[%s+%d]",devuelveRegistro(opA&MASC_CODMEM>>16),opA&MASC_OFFSET);
+                break;
+            case 2:
+                printf("\t \t%s",devuelveRegistro(opA&MASC_CODMEM>>16));
+                break;
+            default:
+                printf("\t \t%d",opA); 
+                break;
+            }
+        }
+        printf("\n");
+        dirfis=nuevadirfis(dirfis,TopA,TopB);
+        instruccion=MKV.mem[dirfis];
+    }
+    cod=instruccion & MASC_CODOP;
+    printf("[%X] ",dirfis);
+    imprimeMnemonico(cod);//deberia de ser STOP
+}
 

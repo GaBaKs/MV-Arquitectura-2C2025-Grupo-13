@@ -6,7 +6,7 @@
 #include "Operaciones_Generales.c" 
 #include "Operaciones.c"
 #include "Codigos_Registros.h"
-
+#include "Dissasembler.c"
 int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[],TipoMKV *MKV);
 void ejecucion(TipoMKV *MKV);
@@ -62,6 +62,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 void ejecucion(TipoMKV *MKV){
     //nombre del arch?
     inicializacion("nombre_arch",MKV);
+    dissa(*MKV);
     char instruccion;
     int TopA,TopB;
     int dirfis;
