@@ -5,7 +5,7 @@
 #include <time.h>
 #include "TDA.h"
 #include "mascaras.h"
-#include "Operaciones_Generales.c"
+#include "Operaciones_Generales.h"
 void NZ_CC (int valor, TipoMKV *MKV){
     MKV->reg[CC]=0;
     if (valor==0)
@@ -220,11 +220,11 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
                     verificaerrores(4); // error de formato
             }
            if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[3])
-             for (int k=i;k>0;k--){      //tamanio de celda
+             for (int k=i;k>0;k--)      //tamanio de celda
                     MKV->mem[dirfis++]=(char)(dato >> ((k-1)*8)) & 0x000000FF ; 
             else
                 verificaerrores(3); //error de segmento      
-            }
+            
 
         }
     
@@ -233,28 +233,26 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
         if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[3]){
             for(j;j<cantCeldas;j++){ //DIMENSION
                 x = 0;
+                printf("[%x] ",dirfis);
                 for(k=0;k<i;k++){ //CANTIDAD DE CELDAS QUE LEE EN MEMORIA
                     x = MKV->mem[dirfis] | x;
                     x = x << 8;
                     if((MKV->reg[EAX] && 0x02) == 2){ //ES UN CHAR
                         y = MKV->mem[dirfis];
                         if(y > 31 || y < 127)
-                            printf("[%x] %c ",dirfis,y);
+                            printf("%c ",dirfis,y);
                         else
-                            printf("[%x] . ",dirfis);
+                            printf(". ",dirfis);
                     }
-                    
                     if((MKV->reg[EAX] && 0x01) == 1) //ES DECIMAL
-                        printf("[%x] %d ",dirfis,x);
+                        printf("%d ",dirfis,x);
                     if((MKV->reg[EAX] && 0x04) == 4) //ES OCTAL
-                        printf("[%x] %o ",dirfis,x);
+                        printf("%o ",dirfis,x);
                     if((MKV->reg[EAX] && 0x08) == 8) //ES HEXADECIMAL
-                        printf("[%x] %x ",dirfis,x);
-                    if((MKV->reg[EAX] && 0x10) == 10){ //ES BINARIO
-                        printf("[%x] ",dirfis);
+                        printf("%x ",dirfis,x);
+                    if((MKV->reg[EAX] && 0x10) == 10) //ES BINARIO
                         print_bin(x);
-                        dirfis++;   
-                    }
+                    dirfis++;         
                 }
                 printf("\n");
             }

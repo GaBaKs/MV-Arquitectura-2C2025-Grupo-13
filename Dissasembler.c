@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Dissasembler.h" //Vacio, los prototipos
 #include "TDA.h"
 #include "mascaras.h"
 #include "Operaciones_Generales.c"
@@ -9,22 +8,23 @@
 // hacer 3 typedef separados
 
 void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB, int TopA, int TopB){              
-        opA=0;
-        opB=0;
+        int LopA=0;
+        int LopB=0;
         for (int i=0;i<TopB;i++){ 
-            opB+=MKV.mem[dirfis+1+i];
-            opB= *opB<<8;  
+            LopB+=MKV.mem[dirfis+1+i];
+            LopB= (LopB)<<8;  
             printf("%X ",MKV.mem[dirfis+1+i]);
         }
         if (TopA==0)
-            opA=opB;
+            LopA=LopB;
         else
             for (int i=0;i<TopA;i++){                        
-                        opA+=MKV.mem[TopB+dirfis+1+i]; 
-                        opA=*opA<<8; 
+                        LopA+=MKV.mem[TopB+dirfis+1+i]; 
+                        LopA=(LopA)<<8; 
                         printf("%X ",MKV.mem[TopB+dirfis+1+i]);  
             } 
-       
+       *opA = (int)LopA;
+       *opB = (int)LopB;
 }
 
 char* devuelveRegistro(unsigned char car){
@@ -163,7 +163,7 @@ int nuevadirfis(int dirfis,int TopA,int TopB){
         return dirfis+suma;
 }
 
-void imprimeTAB(char instruccion, int TopA,int TopB){
+void imprimeTAB(char instruccion,int TopA,int TopB){
 
      switch (TopA+TopB){
             case 5:
@@ -186,7 +186,8 @@ void imprimeTAB(char instruccion, int TopA,int TopB){
 }
 
 void dissa(TipoMKV MKV){
-    int dirfis,instruccion,cod,opA,opB,TopA,TopB;
+    int dirfis,cod,opA,opB,TopA,TopB;
+    char instruccion;
     dirfis=logifisi(MKV,MKV.reg[CS]);
     instruccion=MKV.mem[dirfis];
     while(instruccion!=0x0F){

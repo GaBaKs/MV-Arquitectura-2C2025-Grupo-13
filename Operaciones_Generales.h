@@ -1,0 +1,25 @@
+#include "TDA.h"
+
+void verificaerrores(int codigo_error);
+
+int logifisi(TipoMKV MKV,int dirlog);
+
+void larmar(TipoMKV *MKV,int op);
+
+void getMemoria(TipoMKV *MKV);
+
+void setMemoria(TipoMKV *MKV);
+
+void cambioip(TipoMKV *MKV,int TopA,int TopB);
+
+int escopeta(int corredera);
+
+int escopeta2bytes(int corredera);
+
+int codinvalido(char instruccion);
+
+void getOperandos(TipoMKV *MKV,char instruccion,int dirfis);
+
+int bintoint(char str[33]);
+
+void print_bin(int n);

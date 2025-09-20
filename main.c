@@ -1,18 +1,19 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "TDA.h" //Vacio, los prototipos
 #include "mascaras.h"
-#include "Operaciones_Generales.c" 
-#include "Operaciones.c"
+#include "Operaciones_Generales.h" 
+#include "Operaciones.h"
 #include "Codigos_Registros.h"
-#include "Dissasembler.c"
+#include "Dissasembler.h"
 int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[],TipoMKV *MKV);
 void ejecucion(TipoMKV *MKV);
 
 int main(){
-
+    printf("arranca\n");
     return 0;
 }
 
@@ -48,7 +49,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
                 MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS            
                 MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
-                 while (fread(MKV->mem[MKV->reg[CS]+desp], sizeof(unsigned char), 1, arch) == 1)  //Guarda las instrucciones en el code segment
+                 while (fread(&MKV->mem[MKV->reg[CS]+desp], sizeof(unsigned char), 1, arch) == 1)  //Guarda las instrucciones en el code segment
                      desp++;    
                  fclose(arch);
             } 
@@ -61,7 +62,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 
 void ejecucion(TipoMKV *MKV){
     //nombre del arch?
-    inicializacion("nombre_arch",MKV);
+    inicializacion("sample.vmx",MKV);
     dissa(*MKV);
     char instruccion;
     int TopA,TopB;
@@ -73,7 +74,7 @@ void ejecucion(TipoMKV *MKV){
     MKV->reg[DS] = MKV->tabla_seg[1]+0x00010000;                    //Inicializo del DS una posicion mas del CS
     MKV->reg[IP] = MKV->reg[CS];
     while ( MKV->reg[IP]!=-1 ){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
-        dirfis=logifisi(*MKV,MKV->reg[IP]);
+        dirfis=logifisi(*MKV ,MKV->reg[IP]);
         if (dirfis==-1)
             verificaerrores(3);   //error: fallo de segmento
         else{         

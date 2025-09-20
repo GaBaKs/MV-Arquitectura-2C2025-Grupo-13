@@ -5,27 +5,7 @@
 #include "TDA.h"
 #include "Codigos_Registros.h"
 #include "math.h"
-/*generavectornmemo(Tmnemo Vmnemo)
-{
-    Vmnemo[LAR].mnemonico="LAR"; //0
-    Vmnemo[MAR].mnemonico="MAR"; //1
-    Vmnemo[MBR].mnemonico="MBR"; //2
-    Vmnemo[IP].mnemonico="IP";   //3
-    Vmnemo[OPC].mnemonico="OPC"; //4
-    Vmnemo[OP1].mnemonico="OP1"; //5
-    Vmnemo[OP2].mnemonico="OP2"; //6
-    Vmnemo[EAX].mnemonico="EAX"; //10
-    Vmnemo[EBX].mnemonico="EBX"; //11
-    Vmnemo[ECX].mnemonico="ECX"; //12
-    Vmnemo[EDX].mnemonico="EDX"; //13
-    Vmnemo[EEX].mnemonico="EEX"; //14
-    Vmnemo[EFX].mnemonico="EFX"; //15
-    Vmnemo[AC].mnemonico="AC";   //16
-    Vmnemo[CC].mnemonico="CC";   //17
-    Vmnemo[CS].mnemonico="CS";   //26
-    Vmnemo[DS].mnemonico="DS";   //27
-}
-*/
+
 void verificaerrores(int codigo_error){
     switch (codigo_error){
         case 1:
@@ -41,6 +21,7 @@ void verificaerrores(int codigo_error){
             printf("ERROR: FORMATO NO ESPECIFICADO");
     }
 }
+
 int logifisi(TipoMKV MKV,int dirlog){ 
     int dirfis,segmento,offset;
     segmento=dirlog>>16; 
@@ -60,6 +41,7 @@ int logifisi(TipoMKV MKV,int dirlog){
                 return -1;
         }
 }
+
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
    
@@ -95,8 +77,6 @@ else
     verificaerrores(3); //fallo de segmento
 }
 
-
-
 void cambioip(TipoMKV *MKV,int TopA,int TopB){
     int suma=1;
         if (TopA==0x01)
@@ -123,6 +103,7 @@ int escopeta(int corredera){
     corredera>>=8;  //chk
     return corredera;
 }
+
 int escopeta2bytes(int corredera){
     corredera<<=16;  //chk
     corredera>>=16;  //chk
@@ -135,9 +116,7 @@ int codinvalido(char instruccion){
     else
         return 0;
 }
-
                    
-
 void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){              
     int TopA,TopB;
         TopA=instruccion & MASC_TOPA >> 4; 
@@ -176,24 +155,33 @@ void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
         else
            verificaerrores(3);  
 }        
-       
+int bintoint(char str[33]){     
+    int j=strlen(str);
+    int acum=0;
+    printf("el valor de j es %d\n",j);
+if (str[0]=='1'){
+    for (int i=1;i<j;i++){
+        if (str[i]=='0'){
+            acum+=pow(2,j-i-1);
+        }
+    }
 
-int bintoint(char str[33]){
-    int j,num=0,k=-1;
-    
-    
-    for (j=strlen(str)-1;j>0;j--){
-        ++k;
-        num+= ((int)(str[j]-'0'))*pow(2,k); 
+        return (acum+1)*-1;
+}
+    else{
+        for (int i=0;i<j;i++){
+            if (str[i]=='1'){
+                acum+=pow(2,j-i-1);
+            }
+        }
+        return acum;
     }
-    if (str[0]=='1'){
-        num=~num;
-        num++;
-    }
-    return num;
 }
 
-void print_bin(int n) {
+
+
+
+void print_bin(int n){
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
         printf("%d ", (n >> i) & 1);
     }
