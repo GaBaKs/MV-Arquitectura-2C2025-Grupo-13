@@ -5,8 +5,9 @@
 #include "TDA.h"
 #include "Codigos_Registros.h"
 #include "math.h"
+#include "Operaciones_Generales.h"
 
-void verificaerrores(int codigo_error){
+void verificaerrores(TipoMKV *MKV, int codigo_error){
     switch (codigo_error){
         case 1:
             printf("ERROR: Instruccion invalida");
@@ -20,6 +21,7 @@ void verificaerrores(int codigo_error){
         case 4:
             printf("ERROR: FORMATO NO ESPECIFICADO");
     }
+    MKV->flag = 1;
 }
 
 int logifisi(TipoMKV MKV,int dirlog){ 
@@ -44,25 +46,31 @@ int logifisi(TipoMKV MKV,int dirlog){
 
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
-   
-    int dirlog=0x00010000 + MKV->reg[(op & 0x001F00) >> 16]+ op & MASC_OFFSET;
+    int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+( op & MASC_OFFSET);
+    printf("la dirlog de larmar: %x \n",dirlog); //00010000
     int auxL=logifisi(*MKV,dirlog);
+    printf("Direccion fisica de larmar: %d",auxL);
+    if (auxL==-1){      
+        verificaerrores(MKV,1);
+    }
     MKV->reg[LAR]=dirlog;
     if (auxL!=-1)
-        MKV->reg[MAR]=0x00040000+auxL; //HARDCODEADO
+        MKV->reg[MAR]= 0x00040000+auxL; //HARDCODEADO
     else
-        verificaerrores(3);             // Error de segmento
+        verificaerrores(MKV,3);             // Error de segmento
    
 }
 
 void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
      int max,valor,aux;
      int dirfis=MKV->reg[MAR] & MASC_MARL;
-     max=MKV->reg[MAR] & MASC_MARH;
+     max=(MKV->reg[MAR] & MASC_MARH) >>16;
      for (int i=0;i<max;i++){
-                   aux=MKV->mem[dirfis+1+i];
-                   valor+=aux<<(3-i)*8;
-                }
+        valor<<=8;
+        aux=MKV->mem[dirfis+i];
+        valor+=aux;
+    }
+    printf("valor recontruido de get memoria: %x \n",valor);
     MKV->reg[MBR]=valor;
 }
 
@@ -74,27 +82,28 @@ if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[3])
                     MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
                 }
 else
-    verificaerrores(3); //fallo de segmento
+    verificaerrores(MKV,3); //fallo de segmento
 }
 
 void cambioip(TipoMKV *MKV,int TopA,int TopB){
     int suma=1;
-        if (TopA==0x01)
+        if (TopA==0b01)
             suma++;
         else
-            if (TopA==0x10)
+            if (TopA==0b10)
                 suma+=2;
             else
-                if (TopA==0x11)
+                if (TopA==0b11)
                     suma+=3;     
-        if (TopB==0x01)
+        if (TopB==0b01)
             suma++;
         else
-            if (TopB==0x10)
+            if (TopB==0b10)
                 suma+=2;
             else
-                if (TopB==0x11)
+                if (TopB==0b11)
                     suma+=3;
+            
     MKV->reg[IP]+=suma;
 }
 
@@ -110,19 +119,22 @@ int escopeta2bytes(int corredera){
     return corredera;
 }
 
-int codinvalido(char instruccion){
-    if (instruccion<0 || instruccion>0x1F)
+int codinvalido(char cod){
+
+    if (cod>=0 || cod<=0x1F)
         return 1;
     else
         return 0;
 }
                    
-void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){              
+void getOperandos(TipoMKV *MKV, unsigned char instruccion,int dirfis){              
     int TopA,TopB;
-        TopA=instruccion & MASC_TOPA >> 4; 
-        TopB=instruccion & MASC_TOPB >> 6; 
-        if (dirfis+TopA+TopB+1<=MKV->tabla_seg[2]){
+        printf("dentro de get operandos instruccion: %x \n",instruccion);
+        TopA=(instruccion & MASC_TOPA) >> 4;
+        TopB=(instruccion & MASC_TOPB) >> 6; 
+        if (dirfis+TopA+TopB<=MKV->tabla_seg[2]+MKV->tabla_seg[0]){
             MKV->reg[OPB]=TopB;
+            printf("Valor de OPB con solo ToB: %x \n",MKV->reg[OPB]);
             if (TopB==1)
                 MKV->reg[OPB]<<=16; // 00 00 00 01 ---> 00 01 00 00
             else
@@ -133,7 +145,9 @@ void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
                 MKV->reg[OPB]=MKV->reg[OPB]<<8; 
                 MKV->reg[OPB]+=MKV->mem[dirfis+1+i];    
             }
+            printf("Valor de OPB final: %x \n",MKV->reg[OPB]);
             MKV->reg[OPA]=TopA;
+            printf("Valor de OPA con solo ToA: %x \n",MKV->reg[OPA]);
             switch (TopA){
 
                 case 0: MKV->reg[OPA]=MKV->reg[OPB];
@@ -151,9 +165,10 @@ void getOperandos(TipoMKV *MKV,char instruccion,int dirfis){
                         MKV->reg[OPA]=MKV->reg[OPA]<<8; 
                         MKV->reg[OPA]+=MKV->mem[TopB+dirfis+1+i];   
             } 
+            printf("Valor de OPA final: %x \n",MKV->reg[OPA]);
         }
         else
-           verificaerrores(3);  
+           verificaerrores(MKV,3);  
 }        
 int bintoint(char str[33]){     
     int j=strlen(str);

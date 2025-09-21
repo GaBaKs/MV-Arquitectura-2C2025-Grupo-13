@@ -1,6 +1,6 @@
 #include "TDA.h"
 
-void verificaerrores(int codigo_error);
+void verificaerrores(TipoMKV *MKV,int codigo_error);
 
 int logifisi(TipoMKV MKV,int dirlog);
 
@@ -18,7 +18,7 @@ int escopeta2bytes(int corredera);
 
 int codinvalido(char instruccion);
 
-void getOperandos(TipoMKV *MKV,char instruccion,int dirfis);
+void getOperandos(TipoMKV *MKV,unsigned char instruccion,int dirfis);
 
 int bintoint(char str[33]);
 

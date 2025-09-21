@@ -3,8 +3,8 @@
 #include <string.h>
 #include "TDA.h"
 #include "mascaras.h"
-#include "Operaciones_Generales.c"
-
+#include "Operaciones_Generales.h"
+#include "Codigos_Registros.h"
 // hacer 3 typedef separados
 
 void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB, int TopA, int TopB){              
@@ -190,6 +190,11 @@ void dissa(TipoMKV MKV){
     char instruccion;
     dirfis=logifisi(MKV,MKV.reg[CS]);
     instruccion=MKV.mem[dirfis];
+    /*while(dirfis<= MKV.tabla_seg[1]){
+        printf("prueba la instruccion: %X \n",instruccion);
+        dirfis=nuevadirfis(dirfis,TopA,TopB);
+        instruccion=MKV.mem[dirfis];
+    }*/
     while(instruccion!=0x0F){
         cod=instruccion & MASC_CODOP;
         TopB=instruccion & MASC_TOPB >> 6; 
