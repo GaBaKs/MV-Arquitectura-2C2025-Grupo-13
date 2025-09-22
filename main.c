@@ -45,6 +45,8 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
         if (arch == NULL)
             printf("Error al abrir el archivo, verifique que el nombre ingresado sea el correcto e intente nuevamente. Si es un profesor y esto no funciona, tengan piedad con nuestras almas. cuack");
         else{
+            //si en parametros cumple el -d
+             
             for (int j=0;j<6;j++){
                 fread(&cabecera[j], sizeof(unsigned char), 1, arch);
             }    
@@ -74,7 +76,7 @@ void ejecucion(TipoMKV *MKV){
     char str[200];
     //printf("Ingrese el nombre del archivo que quiere ejecutar\n");
     //scanf("%s",str);
-    strcpy(str,"ejerciciomv1.vmx");
+    strcpy(str,"swapnot.vmx");
     inicializacion(str,MKV);
     dissa(*MKV);
     MKV->flag=0;

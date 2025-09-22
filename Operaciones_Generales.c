@@ -193,6 +193,7 @@ if (str[0]=='1'){
 
 void print_bin(int n){
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
-        printf("%d ", (n >> i) & 1);
+        printf("%d", (n >> i) & 1);
     }
+
 }

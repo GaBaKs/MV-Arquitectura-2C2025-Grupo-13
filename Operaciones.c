@@ -105,6 +105,7 @@ void SHL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
+    printf("valor B: %d",valorB);
     valorA = valorA << valorB;
     MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
@@ -191,9 +192,11 @@ void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
 }
 
 void SYS(TipoMKV *MKV, int opA, int TopA){
-    int i,k,dirfis,j,tam,dato,x,y;
+    int i,k,dirfis,j,tam,dato,x;
+    char y;
+    int flag=0;
     unsigned int cantDatos;
-    char c;
+    char c[100];
     char bin[33];
     dirfis=logifisi(*MKV,MKV->reg[EDX]);
     printf("VALOR DE EDX %x",MKV->reg[EDX]);
@@ -210,8 +213,8 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
 
             case 0x01:scanf("%d",&dato);
                   break;
-            case 0x02: scanf(" %c",&c);
-                       dato=(int)c;
+            case 0x02: scanf("%s",c);
+                       flag=1;
                   break;
             case 0x04: scanf("%o",&dato);
                   break;
@@ -223,12 +226,22 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
             default:
                     verificaerrores(MKV,4); // error de formato
             }
-           if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2])
-             for (int k=i-1;k>=0;k--){      //tamanio de celda
-                int aux=(dato & 0xFF000000) >> 24;
-                MKV->mem[dirfis++]=aux ;
-                dato<<=8;
-             }       
+            if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2]){
+              if(!flag)
+                for (int k=i-1;k>=0;k--){      //tamanio de celda
+                    int aux=(dato & 0xFF000000) >> 24;
+                    MKV->mem[dirfis++]=aux ;
+                    dato<<=8;
+                }
+              else{
+                printf("ENTROFORCHAR\n");
+                 for (int k=i-1;k>=0;k--){     //tamanio de celda
+                    MKV->mem[dirfis++]=c[i-k-1];
+                    printf("ELEMENTO FOR: %c\n", MKV->mem[dirfis-1]);
+                } 
+              }
+                   
+            }        
             else{
                 verificaerrores(MKV,3); //error de segmento
             }
@@ -243,22 +256,22 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
                 for(k=0;k<i;k++){ //DIMENSION
                     x = x << 8;
                     x =  x +(int) MKV->mem[dirfis] ;
-                    if((MKV->reg[EAX] && 0x02) == 2){ //ES UN CHAR
+                    if((MKV->reg[EAX] & 0x02) == 0X02){ //ES UN CHAR
                         y = MKV->mem[dirfis];
-                        if(y > 31 || y < 127)
-                            printf(" %c",y);
+                        if(y > 31 && y < 127)
+                            printf("%c ",y);
                         else
                             printf(". ");
                     }
                     dirfis++;
                 }
-                if((MKV->reg[EAX] & 0x01) == 1) //ES DECIMAL
+                if((MKV->reg[EAX] & 0x01) == 0X01) //ES DECIMAL
                     printf("%d ",x);
-                if((MKV->reg[EAX] & 0x04) == 4) //ES OCTAL
+                if((MKV->reg[EAX] & 0x04) == 0x04) //ES OCTAL
                     printf("%o ",x);
-                if((MKV->reg[EAX] & 0x08) == 8) //ES HEXADECIMAL
+                if((MKV->reg[EAX] & 0x08) == 0x08) //ES HEXADECIMAL
                     printf("%x ",x);
-                if((MKV->reg[EAX] & 0x10) == 10) //ES BINARIO
+                if((MKV->reg[EAX] & 0x10) == 0x10) //ES BINARIO
                     print_bin(x);
                 printf("\n");
             }

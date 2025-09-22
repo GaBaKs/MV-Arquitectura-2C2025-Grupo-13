@@ -167,7 +167,7 @@ void imprimeTAB(char instruccion,int TopA,int TopB){
             case 6:
                 printf("");
             case 5:
-                printf("   ");
+                printf("       ");
                 break;
             case 4:
                 printf("           ");
@@ -193,7 +193,6 @@ void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB ){
     for (int i=dirfis;i<dirmax;i++){
         printf(" %02X ",MKV.mem[i]);
     }
-    //printf(" | ");
 }
 void dissa(TipoMKV MKV){
     int dirfis,cod,opA,opB,TopA,TopB;
@@ -210,12 +209,11 @@ void dissa(TipoMKV MKV){
         imprimeTAB(instruccion,TopA,TopB);
         imprimeMnemonico(cod);
         if (cod>=0x10 && cod<=0x1F){
-            
             if (TopA==3){
                 if ((opA&MASC_OFFSET )==0){
-                    printf("\t[");
+                    printf("\t\t[");
                     devuelveRegistro(((opA&MASC_CODMEM)>>16));
-                    printf("]");
+                    printf("],");
                 }    
                 else{
                     printf("\t[");
