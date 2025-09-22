@@ -14,10 +14,10 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV);
 void ejecucion(TipoMKV *MKV);
 
 int main(){
-    printf("arranca\n");
+    printf("Comienzo de la ejecucion:) cuak \n");
     TipoMKV MKV;
     ejecucion(&MKV);
-    return 0;
+    return 1;
 }
 
 
@@ -41,7 +41,6 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
     i = 0;
     int desp=0;
     unsigned char cabecera[7];
-    //MKV->codigo_error=0;
     arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
             printf("Error al abrir el archivo, verifique que el nombre ingresado sea el correcto e intente nuevamente. Si es un profesor y esto no funciona, tengan piedad con nuestras almas. cuack");
@@ -53,15 +52,15 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 printf("Cabecera correcta \n");
                 fread(&MKV->tabla_seg[0],sizeof(unsigned char),1,arch);         // base CS 
                 fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
-                MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS
+                MKV->tabla_seg[2]=MKV->tabla_seg[1]+1;                            //base DS
                 MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
                 MKV->tabla_seg[0]=0;
                 
-                 while (fread(&MKV->mem[MKV->tabla_seg[0]+desp], sizeof(unsigned char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
+                while (fread(&MKV->mem[MKV->tabla_seg[0]+desp], sizeof(unsigned char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
                     desp++;                    
-                 }
-                 printf("Lectura de archivo realizada correctamente\n");
-                 fclose(arch);
+                }
+                printf("Lectura de archivo realizada correctamente\n");
+                fclose(arch);
             }
             else
                 printf("Error al leer cabecera");
@@ -75,9 +74,9 @@ void ejecucion(TipoMKV *MKV){
     char str[200];
     //printf("Ingrese el nombre del archivo que quiere ejecutar\n");
     //scanf("%s",str);
-    strcpy(str,"test1.vmx");
+    strcpy(str,"ejerciciomv1.vmx");
     inicializacion(str,MKV);
-    //dissa(*MKV);
+    dissa(*MKV);
     MKV->flag=0;
     unsigned char instruccion;
     int TopA,TopB;
@@ -88,7 +87,6 @@ void ejecucion(TipoMKV *MKV){
     MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
     MKV->reg[DS] = 0x00010000;                    //Inicializo del DS una posicion mas del CS 
     MKV->reg[IP] = MKV->reg[CS];
-    printf("valor inicial de IP: %x valor incial de CS: %x valor inicial de DS: %x \n",MKV->reg[IP],MKV->reg[CS],MKV->reg[DS]);
     while ( MKV->reg[IP]!=-1 && !MKV->flag){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
         printf("direccion fisica actual de la instruccion: %d \n",dirfis);
@@ -101,9 +99,10 @@ void ejecucion(TipoMKV *MKV){
                 verificaerrores(MKV,1);
             else{
                 MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC
-                printf("Codigo Operacion Actual %x \n",MKV->reg[OPC]);
+                printf("Codigo Operacion Actual %x y es codigo: ",MKV->reg[OPC]);
+                imprimeMnemonico(MKV->reg[OPC]);
+                printf("\n");
                 getOperandos(MKV,instruccion,dirfis);
-                printf("Los operandos: opA:%x , opB:%x \n ",MKV->reg[OPA], MKV->reg[OPB]);
                 if (MKV->reg[OPC]==0x0F)                       // STOP
                     MKV->reg[IP]=-1;
                 else{
@@ -111,7 +110,6 @@ void ejecucion(TipoMKV *MKV){
                         TopA=(instruccion & MASC_TOPA) >> 4;
                         TopB=(instruccion & MASC_TOPB) >> 6;
                         cambioip(MKV,TopA,TopB);
-                        printf("funcion dos operandos: tipo OPA: %x tipo OPB: %x y el ip paso a valer %d \n",TopA,TopB,MKV->reg[IP]);
                         Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                     }
                     else
@@ -119,7 +117,6 @@ void ejecucion(TipoMKV *MKV){
                             TopA=(instruccion & MASC_TOPB) >> 6;
                             //SWAP(MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                             cambioip(MKV,TopA,0);
-                            printf("funcion un operando: valor OPA:%x tipo OPA: %x y el ip paso a valer %d \n",escopeta(MKV->reg[OPA]),TopA,MKV->reg[IP]);
                             Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);
                             
                         }
@@ -127,6 +124,8 @@ void ejecucion(TipoMKV *MKV){
             }
         }
     }
+    if (MKV->reg[IP]==-1)
+        printf("TERMINO STOP");
 }
 
 

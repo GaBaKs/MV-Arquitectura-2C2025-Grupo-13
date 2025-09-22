@@ -19,11 +19,12 @@ void NZ_CC (int valor, TipoMKV *MKV){
 
 
 int get_Valor (TipoMKV *MKV,int op,int Top){
+
     if (Top==1)
         return MKV->reg[op];
     else
         if (Top==2)
-            return op;
+            return escopeta2bytes(op);
         else
             if (Top==3){
                 larmar(MKV,op);
@@ -33,16 +34,21 @@ int get_Valor (TipoMKV *MKV,int op,int Top){
 }
 
 void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
-    int dirfis,i;
+    int dirfis,i;int valorB;
     int offset,cod; // para tipo memoria
-
-    int valorB=get_Valor(MKV,opB,TopB);
-        if (TopA==3){
-            larmar(MKV,opA);
-            setMemoria(MKV);
-        }
-        else
-            MKV->reg[opA]=valorB;
+    if (TopB!=2)
+     valorB=get_Valor(MKV,opB,TopB);
+    else
+        valorB=opB;
+    printf("valorB: %x opB= %x \n",valorB,opB);
+    if (TopA==3){
+        larmar(MKV,opA);
+        MKV->reg[MBR]=valorB;
+        setMemoria(MKV);
+    }
+    else
+        MKV->reg[opA]=valorB;
+         
 }
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
@@ -91,6 +97,7 @@ void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     valorA-= valorB;
+    printf("el valor de A ene le CMP%d\n",valorA);
     NZ_CC(valorA,MKV);
 }
 
@@ -101,14 +108,13 @@ void SHL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorA = valorA << valorB;
     MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
-    printf("el valor despues del shl con mov %d \n",valorA);
 }
 
 void SHR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
-    valorA=0x7FFFFFFF;
+    valorA&=0x7FFFFFFF;
     valorA>>=valorB;
     MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
@@ -185,28 +191,21 @@ void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
 }
 
 void SYS(TipoMKV *MKV, int opA, int TopA){
-    int i,k,dirfis,j=0,tam,dato,x,y;
-    unsigned int cantCeldas;
+    int i,k,dirfis,j,tam,dato,x,y;
+    unsigned int cantDatos;
     char c;
     char bin[33];
-    printf("entra al sys\n");
-   
     dirfis=logifisi(*MKV,MKV->reg[EDX]);
-    printf("VALOR DE DS: %x \n",MKV->reg[DS]);
-    printf("VALOR DE EDX: %d\n",dirfis);
+    printf("VALOR DE EDX %x",MKV->reg[EDX]);
+    printf("VALOR DE DS EN EL SYS: %x %d",MKV->reg[DS],MKV->reg[DS]);
     i=(MKV->reg[ECX] & MASC_LDH) >> 16; //tamanio por celda
-    printf("Cantidad de celdas a leer: %d \n",cantCeldas);
-    cantCeldas=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
-    printf("tamano de las celdas: %d \n",i);
-    printf("valor de dirfis en el sys: %d\n",dirfis);
-    printf("El valor de ECX %x \n",MKV->reg[ECX]);
-    printf("El valor de EAX %x \n",MKV->reg[EAX]);
+    cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
     switch(opA){
 
      case 1:
         //verifico que formato tengo que leer
-        for (j=0;j<cantCeldas;j++){         //cantidad de numeros a leer
-            printf("[%d]: ",dirfis);
+        for (j=0;j<cantDatos;j++){         //cantidad de numeros a leer
+            printf("[%04X]: ",dirfis);
             switch(MKV->reg[EAX]){
 
             case 0x01:scanf("%d",&dato);
@@ -224,50 +223,49 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
             default:
                     verificaerrores(MKV,4); // error de formato
             }
-           if (dirfis+i*cantCeldas<=MEMORIA && dirfis>=MKV->tabla_seg[2])
-             for (int k=i;k>0;k--)      //tamanio de celda
-                    MKV->mem[dirfis++]=(char)(dato >> ((k-1)*8)) & 0x000000FF ;
+           if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2])
+             for (int k=i-1;k>=0;k--){      //tamanio de celda
+                int aux=(dato & 0xFF000000) >> 24;
+                MKV->mem[dirfis++]=aux ;
+                dato<<=8;
+             }       
             else{
-
-                printf("valor de tabla seg 3: %d valor de dirfis sumado a todo: %d\n",MKV->tabla_seg[3],dirfis+i*cantCeldas);
                 verificaerrores(MKV,3); //error de segmento
             }
         }
-        printf("salio delsys1\n");
         break;
 
     case 2:
-        if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[3]){
-            for(j;j<cantCeldas;j++){ //DIMENSION
+        if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[2]){
+            for(j=0;j<cantDatos;j++){ //CANTIDAD DE CELDAS QUE FORMAN CADA DATO
                 x = 0;
-                printf("[%x] ",dirfis);
-                for(k=0;k<i;k++){ //CANTIDAD DE CELDAS QUE LEE EN MEMORIA
-                    x = MKV->mem[dirfis] | x;
+                printf("[%04X]: ",dirfis);
+                for(k=0;k<i;k++){ //DIMENSION
                     x = x << 8;
+                    x =  x +(int) MKV->mem[dirfis] ;
                     if((MKV->reg[EAX] && 0x02) == 2){ //ES UN CHAR
                         y = MKV->mem[dirfis];
                         if(y > 31 || y < 127)
-                            printf("%c ",dirfis,y);
+                            printf(" %c",y);
                         else
-                            printf(". ",dirfis);
+                            printf(". ");
                     }
-                    if((MKV->reg[EAX] && 0x01) == 1) //ES DECIMAL
-                        printf("%d ",dirfis,x);
-                    if((MKV->reg[EAX] && 0x04) == 4) //ES OCTAL
-                        printf("%o ",dirfis,x);
-                    if((MKV->reg[EAX] && 0x08) == 8) //ES HEXADECIMAL
-                        printf("%x ",dirfis,x);
-                    if((MKV->reg[EAX] && 0x10) == 10) //ES BINARIO
-                        print_bin(x);
                     dirfis++;
                 }
+                if((MKV->reg[EAX] & 0x01) == 1) //ES DECIMAL
+                    printf("%d ",x);
+                if((MKV->reg[EAX] & 0x04) == 4) //ES OCTAL
+                    printf("%o ",x);
+                if((MKV->reg[EAX] & 0x08) == 8) //ES HEXADECIMAL
+                    printf("%x ",x);
+                if((MKV->reg[EAX] & 0x10) == 10) //ES BINARIO
+                    print_bin(x);
                 printf("\n");
             }
-           printf("EL SYS2 SE EJECUTO CORRECTAMENTE");
         }
-        else
+        else{
             verificaerrores(MKV,3); //error de segmento
-        
+        } 
         break;   
     } 
 }
@@ -283,7 +281,7 @@ void JMP(TipoMKV *MKV, int opA, int TopA){
 void JZ(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_Z) == 1)
+        if((MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=valor;
     }
     else
@@ -293,7 +291,7 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
 void JP(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0)//if(MKV->reg[CC[0]] == 0 && MKV->reg[CC[1]] == 0)
+        if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == MASC_Z)//if(MKV->reg[CC[0]] == 0 && MKV->reg[CC[1]] == 0)
             MKV->reg[IP]=valor;
     }
     else
@@ -303,7 +301,7 @@ void JP(TipoMKV *MKV, int opA, int TopA){
 void JN(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_N) == 1 && (MKV->reg[CC]&MASC_Z) == 0) // los cambie ya que son int y no vectores
+        if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == MASC_Z) // los cambie ya que son int y no vectores
             MKV->reg[IP]=valor;
     }
     else
@@ -313,7 +311,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
 void JNZ(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_Z) == 0)
+        if((MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=valor;
     }
     else
@@ -323,7 +321,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
 void JNP(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_N) == 1 || (MKV->reg[CC]&MASC_Z) == 1)
+        if((MKV->reg[CC]&MASC_N) == MASC_N || (MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=valor;
     }
     else
@@ -333,7 +331,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
 void JNN(TipoMKV *MKV, int opA, int TopA){
     int valor=get_Valor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
-        if((MKV->reg[CC]&MASC_N) == 0)
+        if((MKV->reg[CC]&MASC_N) == MASC_N)
             MKV->reg[IP]=valor;
     }
     else

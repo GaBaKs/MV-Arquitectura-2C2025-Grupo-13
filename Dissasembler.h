@@ -9,6 +9,8 @@ void imprimeMnemonico(unsigned char cod);
 
 int nuevadirfis(int dirfis,int TopA,int TopB);
 
+void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB );
+
 void imprimeTAB(char instruccion,int TopA,int TopB);
 
 void dissa(TipoMKV MKV);
