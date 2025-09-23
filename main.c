@@ -14,13 +14,15 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV);
 void ejecucion(TipoMKV *MKV);
 
 int main(int argc, char *argv[]){
-    printf("Bienvenido a la Maquina virtual del grupo 13! Autores: Mario Arriaga Tomas Candotto y Gabriel Seneca :)\n");
+    printf("Bienvenido a la Maquina virtual del grupo 13! Autores: Mario Arriaga, Tomas Candotto y Gabriel Seneca :)\n");
     TipoMKV MKV;
     char str[200];
     strcpy(str,argv[1]);
     inicializacion(str,&MKV);
-    if (argc>2 && strcmp(argv[2],"-d")==0) 
+    if (argc>2 && strcmp(argv[2],"-d")==0){
          dissa(MKV);
+         printf("\n");
+    } 
     ejecucion(&MKV);
     return 1;
 }
@@ -54,7 +56,6 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 fread(&cabecera[j], sizeof(unsigned char), 1, arch);
             }    
             if (verifica_cabecera(cabecera)){
-                printf("Cabecera correcta \n");
                 fread(&MKV->tabla_seg[0],sizeof(unsigned char),1,arch);         // base CS 
                 fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
                 MKV->tabla_seg[2]=MKV->tabla_seg[1]+1;                            //base DS
@@ -89,19 +90,14 @@ void ejecucion(TipoMKV *MKV){
     MKV->reg[IP] = MKV->reg[CS];
     while ( MKV->reg[IP]!=-1 && !MKV->flag){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
-        printf("direccion fisica actual de la instruccion: %d \n",dirfis);
         if (dirfis==-1)
             verificaerrores(MKV,3);   //error: fallo de segmento
         else{
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
-            printf("instruccion actual: %x \n",instruccion);
             if (!codinvalido(instruccion & MASC_CODOP))     // error: Codigo invalido
                 verificaerrores(MKV,1);
             else{
                 MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC
-                printf("Codigo Operacion Actual %x y es codigo: ",MKV->reg[OPC]);
-                imprimeMnemonico(MKV->reg[OPC]);
-                printf("\n");
                 getOperandos(MKV,instruccion,dirfis);
                 if (MKV->reg[OPC]==0x0F)                       // STOP
                     MKV->reg[IP]=-1;
@@ -124,8 +120,7 @@ void ejecucion(TipoMKV *MKV){
             }
         }
     }
-    if (MKV->reg[IP]==-1)
-        printf("TERMINO STOP");
+
 }
 
 

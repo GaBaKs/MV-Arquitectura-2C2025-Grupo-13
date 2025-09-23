@@ -40,7 +40,6 @@ void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
      valorB=get_Valor(MKV,opB,TopB);
     else
         valorB=opB;
-    printf("valorB: %x opB= %x \n",valorB,opB);
     if (TopA==3){
         larmar(MKV,opA);
         MKV->reg[MBR]=valorB;
@@ -97,7 +96,6 @@ void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
     valorA-= valorB;
-    printf("el valor de A ene le CMP%d\n",valorA);
     NZ_CC(valorA,MKV);
 }
 
@@ -105,7 +103,6 @@ void SHL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = get_Valor(MKV,opB,TopB);
     valorA = get_Valor(MKV,opA,TopA);
-    printf("valor B: %d",valorB);
     valorA = valorA << valorB;
     MOV(MKV,opA,TopA,valorA,2);
     NZ_CC(valorA,MKV);
@@ -199,8 +196,6 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
     char c[100];
     char bin[33];
     dirfis=logifisi(*MKV,MKV->reg[EDX]);
-    printf("VALOR DE EDX %x",MKV->reg[EDX]);
-    printf("VALOR DE DS EN EL SYS: %x %d",MKV->reg[DS],MKV->reg[DS]);
     i=(MKV->reg[ECX] & MASC_LDH) >> 16; //tamanio por celda
     cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
     switch(opA){
@@ -234,10 +229,9 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
                     dato<<=8;
                 }
               else{
-                printf("ENTROFORCHAR\n");
                  for (int k=i-1;k>=0;k--){     //tamanio de celda
                     MKV->mem[dirfis++]=c[i-k-1];
-                    printf("ELEMENTO FOR: %c\n", MKV->mem[dirfis-1]);
+                    printf("%c", MKV->mem[dirfis-1]);
                 } 
               }
                    
