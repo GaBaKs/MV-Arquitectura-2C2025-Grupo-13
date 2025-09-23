@@ -13,9 +13,14 @@ int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[],TipoMKV *MKV);
 void ejecucion(TipoMKV *MKV);
 
-int main(){
-    printf("Comienzo de la ejecucion:) cuak \n");
+int main(int argc, char *argv[]){
+    printf("Bienvenido a la Maquina virtual del grupo 13! Autores: Mario Arriaga Tomas Candotto y Gabriel Seneca :)\n");
     TipoMKV MKV;
+    char str[200];
+    strcpy(str,argv[1]);
+    inicializacion(str,&MKV);
+    if (argc>2 && strcmp(argv[2],"-d")==0) 
+         dissa(MKV);
     ejecucion(&MKV);
     return 1;
 }
@@ -44,9 +49,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
     arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
             printf("Error al abrir el archivo, verifique que el nombre ingresado sea el correcto e intente nuevamente. Si es un profesor y esto no funciona, tengan piedad con nuestras almas. cuack");
-        else{
-            //si en parametros cumple el -d
-             
+        else{  
             for (int j=0;j<6;j++){
                 fread(&cabecera[j], sizeof(unsigned char), 1, arch);
             }    
@@ -73,12 +76,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
 
 void ejecucion(TipoMKV *MKV){
 
-    char str[200];
-    //printf("Ingrese el nombre del archivo que quiere ejecutar\n");
-    //scanf("%s",str);
-    strcpy(str,"swapnot.vmx");
-    inicializacion(str,MKV);
-    dissa(*MKV);
+
     MKV->flag=0;
     unsigned char instruccion;
     int TopA,TopB;
