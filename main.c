@@ -58,11 +58,11 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
             if (verifica_cabecera(cabecera)){
                 fread(&MKV->tabla_seg[0],sizeof(unsigned char),1,arch);         // base CS 
                 fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
-                MKV->tabla_seg[2]=MKV->tabla_seg[1]+1;                            //base DS
+                MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS
                 MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
                 MKV->tabla_seg[0]=0;
                 
-                while (fread(&MKV->mem[MKV->tabla_seg[0]+desp], sizeof(unsigned char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
+                while (fread(&MKV->mem[MKV->tabla_seg[0]+desp], sizeof(char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
                     desp++;                    
                 }
                 printf("Lectura de archivo realizada correctamente\n");
@@ -88,11 +88,9 @@ void ejecucion(TipoMKV *MKV){
     MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
     MKV->reg[DS] = 0x00010000;                    //Inicializo del DS una posicion mas del CS 
     MKV->reg[IP] = MKV->reg[CS];
-    while ( MKV->reg[IP]!=-1 && !MKV->flag){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
+    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<=MKV->tabla_seg[1]+MKV->tabla_seg[0]){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
-        if (dirfis==-1)
-            verificaerrores(MKV,3);   //error: fallo de segmento
-        else{
+        
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
             if (!codinvalido(instruccion & MASC_CODOP))     // error: Codigo invalido
                 verificaerrores(MKV,1);
@@ -118,7 +116,7 @@ void ejecucion(TipoMKV *MKV){
                         }
                 }
             }
-        }
+        
     }
 
 }

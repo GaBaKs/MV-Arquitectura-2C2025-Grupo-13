@@ -121,8 +121,7 @@ int escopeta2bytes(int corredera){
 }
 
 int codinvalido(char cod){
-
-    if (cod>=0 || cod<=0x1F)
+    if (cod>=0 || cod<=0x1F || (cod<0x0F && cod>=0x0A) || cod == 0x09)
         return 1;
     else
         return 0;
@@ -192,6 +191,7 @@ if (str[0]=='1'){
 
 
 void print_bin(int n){
+    printf("0b");
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {
         printf("%d", (n >> i) & 1);
     }
