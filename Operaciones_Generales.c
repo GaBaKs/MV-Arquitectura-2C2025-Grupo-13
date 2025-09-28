@@ -48,9 +48,6 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
     int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+( op & MASC_OFFSET);
     int auxL=logifisi(*MKV,dirlog);
-    if (auxL==-1){      
-        verificaerrores(MKV,1);
-    }
     MKV->reg[LAR]=dirlog;
     if (auxL!=-1)
         MKV->reg[MAR]= 0x00040000+auxL; //HARDCODEADO
@@ -58,7 +55,6 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
         verificaerrores(MKV,3);
     }
                      // Error de segmento
-   
 }
 
 void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
@@ -78,7 +74,7 @@ void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la di
     dirfis=MKV->reg[MAR] & MASC_MARL;
 if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[2])
                 for (int i=CANTCELDAS;i>0;i--){ 
-                    MKV->mem[dirfis++]=(char)(valor >> ((i-1)*8)) & 0x000000FF ; 
+                    MKV->mem[dirfis++]=(char)(valor >> (((i-1)*8)) & 0x000000FF) ; 
                 }
 else{ 
     verificaerrores(MKV,3); //fallo de segmento
@@ -121,7 +117,7 @@ int escopeta2bytes(int corredera){
 }
 
 int codinvalido(char cod){
-    if (cod>=0 || cod<=0x1F || (cod<0x0F && cod>=0x0A) || cod == 0x09)
+    if ((cod<0x0F && cod>=0x09) || cod>0x1F || cod<0x0)
         return 1;
     else
         return 0;
@@ -162,9 +158,11 @@ void getOperandos(TipoMKV *MKV, unsigned char instruccion,int dirfis){
                         MKV->reg[OPA]+=MKV->mem[TopB+dirfis+1+i];   
             } 
         }
-        else
+        else{
            verificaerrores(MKV,3);  
+        }
 }        
+
 int bintoint(char str[33]){     
     int j=strlen(str);
     int acum=0;
@@ -196,4 +194,63 @@ void print_bin(int n){
         printf("%d", (n >> i) & 1);
     }
 
+}
+
+int getValor (TipoMKV *MKV,int op,int Top){
+
+    if (Top==1)
+        return getRegistro(*MKV,op);
+    else
+        if (Top==2)
+            return escopeta2bytes(op); //la escopeta funciona como un "getInmediato"
+        else
+            if (Top==3){
+                larmar(MKV,op);
+                getMemoria(MKV);  
+                return MKV->reg[MBR];
+            }
+}
+
+void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega siendo un inmediato
+
+    valorB=(escopeta2bytes(valorB));
+
+    if (TopA==1){        //meto inmediato a registro
+        MKV->reg[opA]=valorB;     
+    }
+    else
+        if(TopA==3){    //meto inmediato a memoria
+            larmar(MKV,opA);
+            MKV->reg[MBR]=valorB;
+            setMemoria(MKV);    
+        }
+      
+}
+
+
+void setRegistro(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega siendo un registro
+    if (TopA==1){        //meto registro a registro
+        MKV->reg[opA]=MKV->reg[valorB];     
+    }
+    else
+        if(TopA==3){    //meto registro a memoria
+            larmar(MKV,opA);
+            MKV->reg[MBR]=MKV->reg[valorB];
+            setMemoria(MKV);    
+        }
+}
+
+int getRegistro(TipoMKV MKV, int opA){
+    return MKV.reg[opA];
+}
+
+void setValor(TipoMKV *MKV,int op, int Top, int valor){
+    if (Top==1)
+        MKV->reg[op]=valor;
+    else
+        if (Top==3){
+            larmar(MKV,op);
+            MKV->reg[MBR]=valor;
+            setMemoria(MKV);  
+        }
 }

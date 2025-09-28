@@ -31,8 +31,26 @@ void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB
 void devuelveRegistro(unsigned char car){
     int car2=(int) car;
    switch(car2) {
+    case 0x00:
+        printf("LAR");
+        break;
+    case 0x01:
+        printf("MAR");
+        break;
+    case 0x02:
+        printf("MBR");
+        break;
     case 0x03:
         printf("IP");
+        break;
+    case 0x04:
+        printf("OPC");
+    break;
+    case 0x05:
+        printf("OP1");
+        break;
+    case 0x06:
+        printf("OP2");
         break;
     case 17:
         printf("CC");
@@ -170,28 +188,10 @@ int nuevadirfis(int dirfis,int TopA,int TopB){
 }
 
 void imprimeTAB(char instruccion,int TopA,int TopB){
-     switch (TopA+TopB+1){
-            case 6:
-                printf("");
-            case 5:
-                printf("           ");
-                break;
-            case 4:
-                printf("               ");
-                break;
-            case 3:
-                printf("                   ");
-                break;
-            case 2:
-                printf("            ");
-                break;
-            case 1:
-                printf("               ");
-                break;
-        }
+     int valormax=1+TopB+TopA;
+        for (int i=valormax;i<=7;i++)
+            printf("    ");
         printf(" | ");
-
-   
 }
 
 void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB ){
@@ -211,7 +211,7 @@ void dissa(TipoMKV MKV){
         TopB=(instruccion & MASC_TOPB) >> 6; 
         TopA=(instruccion & MASC_TOPA) >> 4; 
         getOperandosDissa(MKV,instruccion,dirfis,&opA,&opB,TopA,TopB);
-        printf("[%04X] ",dirfis);
+        printf("[%04X]",dirfis);
         imprimeOperandos(MKV,dirfis,TopA,TopB);
         imprimeTAB(instruccion,TopA,TopB);
         imprimeMnemonico(cod);
@@ -274,22 +274,14 @@ void dissa(TipoMKV MKV){
                     
                 break;
             case 2:
-                    printf("\t%d",opA); 
-                    //devuelveRegistro(((opA&MASC_CODMEM)>>16));    
-                break;
-            default:
-                printf("\t%d",opA); 
+                    printf("\t%d",opA);   
                 break;
             }
         }
         printf(" \n");
-        //dirfis=nuevadirfis(dirfis,TopA,TopB);
         dirfis+=TopA+TopB+1;
         instruccion=MKV.mem[dirfis];
-    }/*
-    cod=instruccion & MASC_CODOP;
-    printf("[%04X] ",dirfis);
-    imprimeMnemonico(cod);//deberia de ser STOP
-    */
+    }
+   
 }
 

@@ -23,11 +23,10 @@ int main(int argc, char *argv[]){
          dissa(MKV);
          printf("\n");
     } 
+    
     ejecucion(&MKV);
     return 1;
 }
-
-
 
 int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cabecera
     int i=0;
@@ -40,7 +39,6 @@ int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cab
     else
         return 0; //Version erronea
 }
-
 
 void inicializacion(char nombre_arch[],TipoMKV *MKV){
     FILE *arch;
@@ -73,11 +71,7 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
         }
 }
 
-
-
 void ejecucion(TipoMKV *MKV){
-
-
     MKV->flag=0;
     unsigned char instruccion;
     int TopA,TopB;
@@ -88,19 +82,19 @@ void ejecucion(TipoMKV *MKV){
     MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
     MKV->reg[DS] = 0x00010000;                    //Inicializo del DS una posicion mas del CS 
     MKV->reg[IP] = MKV->reg[CS];
-    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<=MKV->tabla_seg[1]+MKV->tabla_seg[0]){   // mientas no exista un error o se termine la memoria                 MKV->codigo_error==0 &&
+    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<MKV->tabla_seg[1]+MKV->tabla_seg[0]){   // mientas no exista un error o se termine la memoria
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
-        
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
-            if (!codinvalido(instruccion & MASC_CODOP))     // error: Codigo invalido
+            if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
                 verificaerrores(MKV,1);
+            }
             else{
                 MKV->reg[OPC]= instruccion & MASC_CODOP;        // guardo el cod de operacion en OPC
                 getOperandos(MKV,instruccion,dirfis);
                 if (MKV->reg[OPC]==0x0F)                       // STOP
                     MKV->reg[IP]=-1;
                 else{
-                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos (testeado)
+                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos
                         TopA=(instruccion & MASC_TOPA) >> 4;
                         TopB=(instruccion & MASC_TOPB) >> 6;
                         cambioip(MKV,TopA,TopB);
@@ -109,10 +103,8 @@ void ejecucion(TipoMKV *MKV){
                     else
                         if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x08){    //un operando
                             TopA=(instruccion & MASC_TOPB) >> 6;
-                            //SWAP(MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                             cambioip(MKV,TopA,0);
-                            Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);
-                            
+                            Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
                         }
                 }
             }

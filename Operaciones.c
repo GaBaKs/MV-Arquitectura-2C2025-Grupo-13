@@ -19,78 +19,52 @@ void NZ_CC (int valor, TipoMKV *MKV){
 }   //lo afectan ADD, SUB, MUL, DIV, CMP, AND, OR, XOR, SHL, SHR, SAR, NOT
 
 
-int get_Valor (TipoMKV *MKV,int op,int Top){
 
-    if (Top==1)
-        return MKV->reg[op];
-    else
-        if (Top==2)
-            return escopeta2bytes(op);
-        else
-            if (Top==3){
-                larmar(MKV,op);
-                getMemoria(MKV);
-                return MKV->reg[MBR];
-            }
-}
 
 void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
-    int dirfis,i;int valorB;
-    int offset,cod; // para tipo memoria
-    valorB=get_Valor(MKV,opB,TopB);   
-    if (TopB==-1)
-        valorB=opB;
-    if (TopA==3){
-        larmar(MKV,opA);
-        MKV->reg[MBR]=valorB;
-        setMemoria(MKV);
-    }
-    else{
-        MKV->reg[opA]=valorB;
-    }     
+    int valorB, valorA;
+    valorB = getValor(MKV,opB,TopB);
+    setValor(MKV,opA,TopA,valorB);
+
 }
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA+= valorB;
-    printf("VALORA ADD: %x VALORB ADD: %d \n",valorA,valorB);
-    if (TopA==1)
-        printf("EL VALOR DE EDX ES %x \n",valorA);
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
+
 void SUB (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA-= valorB;
-    printf("VALOR DE ECX: %d\n",valorA);
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA*= valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void DIV (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     if(valorB != 0){
         MKV->reg[AC] = valorA % valorB; //guardo el resto en AC
         valorA = (int) valorA / valorB;
-        MOV(MKV,opA,TopA,valorA,-1);
-        NZ_CC(valorA,MKV);
-        
+        setValor(MKV,opA,TopA,valorA);
+        NZ_CC(valorA,MKV);    
     }
     else
         verificaerrores(MKV,2);     //error: division por cero
@@ -98,101 +72,102 @@ void DIV (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
 
 void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA-= valorB;
-    printf("EL VALOR DE AC ES DE %d Y EL DE EFX ES %d \n",MKV->reg[AC],MKV->reg[EFX]);
     NZ_CC(valorA,MKV);
 }
 
 void SHL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA = valorA << valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void SHR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
-    valorA&=0x7FFFFFFF;
-    valorA>>=valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
+    for (int i=0;i<valorB;i++){
+        valorA>>=1;
+        valorA&=0x7FFFFFFF; //pone en 0 el bit mas significativo
+    }
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void SAR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
-    valorA = valorA >> valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
+    valorA>>= valorB;
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void AND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA &= valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void OR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA |= valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void XOR (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
     valorA ^= valorB;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 
 void SWAP(TipoMKV *MKV,int opA,int TopA,int opB,int TopB){
     int valorB, valorA;
     int aux;
-    valorB = get_Valor(MKV,opB,TopB);
-    valorA = get_Valor(MKV,opA,TopA);
-    MOV(MKV,opA,TopB,valorB,-1);
-    MOV(MKV,opB,TopA,valorA,-1);
+    valorB = getValor(MKV,opB,TopB);
+    valorA = getValor(MKV,opA,TopA);
+    setValor(MKV,opA,TopB,valorB); //los TopA y TopB deberian ser iguales
+    setValor(MKV,opB,TopA,valorA);
 }
 
 void LDL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB); 
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB); 
+    valorA = getValor(MKV,opA,TopA);
     valorA&=0xFFFF0000;
     valorA|=valorB&0x0000FFFF;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
 }
 
 void LDH (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB); 
-    valorA = get_Valor(MKV,opA,TopA);
+    valorB = getValor(MKV,opB,TopB); 
+    valorA = getValor(MKV,opA,TopA);
     valorA&=0x0000FFFF;
     valorA|=(valorB&0x0000FFFF)<<16;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
 }
 
 void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     srand(time(NULL));
     int valorB, valorA;
-    valorB = get_Valor(MKV,opB,TopB);
+    valorB = getValor(MKV,opB,TopB);
     valorA = rand() % (valorB + 1); //rand() genera un numero aleatorio y al hacerle % (valB + 1) se establece el rango entre 0 y valB.
-    MOV(MKV,opA,TopA,valorA,2);
+    setValor(MKV,opA,TopA,valorA);
 }
 
 void SYS(TipoMKV *MKV, int opA, int TopA){
@@ -266,14 +241,13 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
                     }
                     dirfis++;
                 }
-
                 printf(" ");
-                if((MKV->reg[EAX] & 0x01) == 0X01) //ES DECIMAL
-                    printf("%d ",x);
+                if((MKV->reg[EAX] & 0x08) == 0x08) //ES HEXADECIMAL
+                    printf("0x%X ",x);
                 if((MKV->reg[EAX] & 0x04) == 0x04) //ES OCTAL
                     printf("0o%o ",x);
-                if((MKV->reg[EAX] & 0x08) == 0x08) //ES HEXADECIMAL
-                    printf("0x%04X ",x);
+                if((MKV->reg[EAX] & 0x01) == 0X01) //ES DECIMAL
+                    printf("%d ",x);
                 if((MKV->reg[EAX] & 0x10) == 0x10) //ES BINARIO
                     print_bin(x);
                 printf("\n");
@@ -287,21 +261,19 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
-   int valor=get_Valor(MKV,opA,TopA);
+   int valor=getValor(MKV,opA,TopA);
    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         MKV->reg[IP]=valor;
-        printf("SALTO JMP\n");    
     }
     else
         verificaerrores(MKV,3); //fallo de segmento
 }
 
 void JZ(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_Z) == MASC_Z){
             MKV->reg[IP]=valor;
-            printf("SALTO JZ\n");
         }
     }
     else
@@ -309,11 +281,10 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JP(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0){
             MKV->reg[IP]=valor;
-            printf("SALTO JP\n");
         }
     }
     else
@@ -321,7 +292,7 @@ void JP(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JN(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=valor;
@@ -331,7 +302,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JNZ(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=valor;
@@ -341,7 +312,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JNP(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N || (MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=valor;
@@ -351,7 +322,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
 }
 
 void JNN(TipoMKV *MKV, int opA, int TopA){
-    int valor=get_Valor(MKV,opA,TopA);
+    int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
         if((MKV->reg[CC]&MASC_N) == 0)
             MKV->reg[IP]=valor;
@@ -362,9 +333,9 @@ void JNN(TipoMKV *MKV, int opA, int TopA){
 
 void NOT(TipoMKV *MKV, int opA, int TopA){
     int valorA;
-    valorA=get_Valor(MKV,opA,TopA);
+    valorA=getValor(MKV,opA,TopA);
     valorA=~valorA;
-    MOV(MKV,opA,TopA,valorA,-1);
+    setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
 

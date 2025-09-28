@@ -10,6 +10,16 @@ void getMemoria(TipoMKV *MKV);
 
 void setMemoria(TipoMKV *MKV);
 
+int getValor (TipoMKV *MKV,int op,int Top);
+
+void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB);
+
+void setRegistro(TipoMKV *MKV,int opA,int TopA,int valorB);
+
+int getRegistro(TipoMKV MKV, int opA);
+
+void setValor(TipoMKV *MKV,int op, int Top, int valor);
+
 void cambioip(TipoMKV *MKV,int TopA,int TopB);
 
 int escopeta(int corredera);
