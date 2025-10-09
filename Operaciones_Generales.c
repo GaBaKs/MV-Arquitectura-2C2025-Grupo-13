@@ -254,3 +254,87 @@ void setValor(TipoMKV *MKV,int op, int Top, int valor){
             setMemoria(MKV);  
         }
 }
+
+int suf_mem(){
+
+}
+
+void arma_tabla_Seg(){
+
+}
+
+void cargaVMI(){
+
+}
+int verificaVMI(){
+
+}
+int desplazamiento_valido(TipoMKV *MKV, int dirfis, int segmento, int desplazamiento){ //o tmb puede ser llamado permanezco_en_segmento o desplazamiento_valido fallo_de_segmenteo este tenemos que cambiar mas coasa
+
+}
+
+void generaVMI(TipoMKV MKV,char *nombre_arch){ //agregar al .h
+    FILE *arch;
+    int i,aux;
+    char nuevoarch[256],dato;
+    strcpy(nuevoarch,nombre_arch);
+    /*    char *punto = strrchr(auxc, '.'); // Busca la última aparición de '.'
+    if (punto != NULL) {
+        strcpy(punto, ".vmi"); // Reemplaza la extensión
+    } else {
+        strcat(auxc, ".vmi"); // Si no hay extensión, la agrega
+    } esto es tuki a chequear que carajo hace*/
+    arch=fopen(nuevoarch,"wb");
+    if (arch!=NULL){
+        dato='V';
+        fwrite(&dato,sizeof(char),1,arch);
+        dato='M';
+        fwrite(&dato,sizeof(char),1,arch);
+        dato='I';
+        fwrite(&dato,sizeof(char),1,arch);
+        dato='2';
+        fwrite(&dato,sizeof(char),1,arch);
+        dato='5';
+        fwrite(&dato,sizeof(char),1,arch);
+        dato='1';//version
+        fwrite(&dato,sizeof(char),1,arch);
+
+        /*  aux=tamanioRAM/1024; 
+        alto=(aux&0xFF00)>>8;
+        bajo=aux&0x00FF;
+        grabador=alto; // CHE EL CARGA CS TIENE UNA VARIABLE DE CONTROL QUE SE LLAMA H CREO QUE LEE, GRABA Y SUMA
+        fwrite(&grabador,sizeof(unsigned char),1,fichero);
+        grabador=bajo;
+        fwrite(&grabador,sizeof(unsigned char),1,fichero);*/
+
+        //dato=//algo que calcula la memoria principal
+        //fwrite(&dato,sizeof(char),1,arch);
+        //dato= la segunda parte de la memoria principal
+        //fwrite(&dato,sizeof(char),1,arch);
+        for(int j=0;j<16;j++){ //Este ciclo arma los registros
+            dato=((MKV).reg[j]&0xFF000000)>>24;
+            fwrite(&dato,sizeof(char),1,arch);
+            dato=((MKV).reg[j]&0x00FF0000)>>16;
+            fwrite(&dato,sizeof(char),1,arch);
+            dato=((MKV).reg[j]&0x0000FF00)>>8;
+            fwrite(&dato,sizeof(char),1,arch);
+            dato=((MKV).reg[j]&0x000000FF);
+            fwrite(&dato,sizeof(char),1,arch);
+        }
+        for(int k=0;k<6;k++){ //Este ciclo arma la tabla de segmentos aca puse 6 pero en tk es 8???
+            dato=((MKV).tabla_seg[k][0]&0xFF00)>>8;
+            fwrite(&dato,sizeof(unsigned char),1,arch);
+            dato=((MKV).tabla_seg[k][0]&0x00FF);
+            fwrite(&dato,sizeof(unsigned char),1,arch);
+            dato=((MKV).tabla_seg[k][1]&0xFF00)>>8;
+            fwrite(&dato,sizeof(unsigned char),1,arch);
+            dato=((MKV).tabla_seg[k][1]&0x00FF);
+            fwrite(&dato,sizeof(unsigned char),1,arch);
+        }
+        for(i=0;i<MEMORIA;i++){
+            dato=(unsigned char)(MKV).mem[i];
+            fwrite(&dato,sizeof(unsigned char),1,arch);
+        }
+    }
+    fclose(arch);
+}
