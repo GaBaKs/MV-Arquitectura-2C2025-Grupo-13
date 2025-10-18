@@ -27,7 +27,7 @@ int main(int argc, char *argv[]){
     ejecucion(&MKV);
     return 1;
 }
-
+/*
 int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cabecera
     int i=0;
     unsigned char comp[7]={'V','M','X','2','5',0b00000001};
@@ -38,6 +38,33 @@ int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cab
         return 1; //Version correcta
     else
         return 0; //Version erronea
+}
+*/
+
+int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cabecera
+   int i=0;
+    int flag=0;
+    unsigned char comp[6]={'V','M','I','2','5'};
+
+    if (cabecera[2]=='X'){
+        comp[2]=='X';
+    }
+    while (i<5 && comp[i]==cabecera[i]){
+        i++;
+    }
+    if (i==5){
+        if (cabecera[2]=='X' && cabecera[6]==0b00000001)  
+                return 1;       // VMX primera version
+        
+        else
+            if (cabecera[2]=='X' && cabecera[6]==0b00000010)
+                return 2;   //VMX segunda version
+            else    
+                if (cabecera[2]=='I' && cabecera[6]==0b00000001)        
+                return 3;   // VMI25
+    }
+    else                
+        return 0;           // error
 }
 
 void inicializacion(char nombre_arch[],TipoMKV *MKV){
@@ -53,7 +80,8 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
             for (int j=0;j<6;j++){
                 fread(&cabecera[j], sizeof(unsigned char), 1, arch);
             }    
-            if (verifica_cabecera(cabecera)){
+            int cabecera=verifica_cabecera(cabecera);       //verifico la version
+            if (cabecera==1){           //VMX25 parte 1
                 fread(&MKV->tabla_seg[0],sizeof(unsigned char),1,arch);         // base CS 
                 fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
                 MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS
@@ -67,7 +95,15 @@ void inicializacion(char nombre_arch[],TipoMKV *MKV){
                 fclose(arch);
             }
             else
-                printf("Error al leer cabecera");
+                if (cabecera==2){           //VMX25 parte 2
+                    
+                }
+                else
+                    if (cabecera==3){       //VMI25 1
+
+                    }
+                    else
+                        printf("Error al leer cabecera");
         }
 }
 
