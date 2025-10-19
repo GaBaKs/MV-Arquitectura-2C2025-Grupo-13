@@ -51,7 +51,6 @@ void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     valorA = getValor(MKV,opA,TopA);
-    valorA*= valorB;
     setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
@@ -183,81 +182,133 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
     switch(opA){
     
      case 1:
-        //verifico que formato tengo que leer
-        for (j=0;j<cantDatos;j++){         //cantidad de numeros a leer
-            printf("[%04X]: ",dirfis);
-            switch(MKV->reg[EAX]){
-
-            case 0x01:scanf("%d",&dato);
-                  break;
-            case 0x02: scanf("%s",c);
-                       flag=1;
-                  break;
-            case 0x04: scanf("%o",&dato);
-                  break;
-            case 0x08: scanf("%x",&dato);
-                  break;
-            case 0x10: scanf("%s",bin);
-                       dato=bintoint(bin);
-                   break;
-            default:
-                    verificaerrores(MKV,4); // error de formato
-            }
-            if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2]){
-              if(!flag)
-                for (int k=i-1;k>=0;k--){      //tamanio de celda
-                    int aux=(dato & 0xFF000000) >> 24;
-                    MKV->mem[dirfis++]=aux ;
-                    dato<<=8;
-                }
-              else{
-                 for (int k=i-1;k>=0;k--){     //tamanio de celda
-                    MKV->mem[dirfis++]=c[i-k-1];
-                    printf("%c", MKV->mem[dirfis-1]);
-                } 
-              }
-                   
-            }        
-            else{
-                verificaerrores(MKV,3); //error de segmento
-            }
-        }
+        SYS1(MKV,cantDatos,dirfis);
         break;
 
     case 2:
-        if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[2]){
-            for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
-                x = 0;
-                printf("[%04X]: ",dirfis);
-                for(k=0;k<i;k++){ //DIMENSION, cantidad de celdas a leer para cada dato
-                    x = x << 8;
-                    x =  x +(int) MKV->mem[dirfis] ;
-                    if((MKV->reg[EAX] & 0x02) == 0X02){ //ES UN CHAR
-                        y = MKV->mem[dirfis];
-                        if(y > 31 && y < 127)
-                            printf("%c",y);
-                        else
-                            printf(". ");
-                    }
-                    dirfis++;
-                }
-                printf(" ");
-                if((MKV->reg[EAX] & 0x08) == 0x08) //ES HEXADECIMAL
-                    printf("0x%X ",x);
-                if((MKV->reg[EAX] & 0x04) == 0x04) //ES OCTAL
-                    printf("0o%o ",x);
-                if((MKV->reg[EAX] & 0x01) == 0X01) //ES DECIMAL
-                    printf("%d ",x);
-                if((MKV->reg[EAX] & 0x10) == 0x10) //ES BINARIO
-                    print_bin(x);
-                printf("\n");
-            }
+        SYS2(MKV,cantDatos,dirfis);
+        break;
+    case 3: //STRING READ
+        SYS3(MKV,cantDatos,dirfis):
+        break;
+    case 4: //STRING WRITE
+        SYS4(MKV,dirfis):
+        break;
+    case 7: //CLEAR SCREEN
+        SYS7():
+        break;
+    case 0xF; //BREAKPOINT
+        SYSF():
+        break;
+
+    } 
+}
+void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
+    int flag=0,j,dato;
+    char c[100];
+    char bin[33];
+    //verifico que formato tengo que leer
+    for (j=0;j<cantDatos;j++){         //cantidad de numeros a leer
+        printf("[%04X]: ",dirfis);
+        switch(MKV->reg[EAX]){
+
+        case 0x01:scanf("%d",&dato);
+                break;
+        case 0x02: scanf("%s",c);
+                    flag=1;
+                break;
+        case 0x04: scanf("%o",&dato);
+                break;
+        case 0x08: scanf("%x",&dato);
+                break;
+        case 0x10: scanf("%s",bin);
+                    dato=bintoint(bin);
+                break;
+        default:
+                verificaerrores(MKV,4); // error de formato
         }
+        if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2]){ //cambiar
+            if(!flag)
+            for (int k=i-1;k>=0;k--){      //tamanio de celda
+                int aux=(dato & 0xFF000000) >> 24;
+                MKV->mem[dirfis++]=aux ;
+                dato<<=8;
+            }
+            else{
+                for (int k=i-1;k>=0;k--){     //tamanio de celda
+                MKV->mem[dirfis++]=c[i-k-1];
+                printf("%c", MKV->mem[dirfis-1]);
+            } 
+            }
+                
+        }        
         else{
             verificaerrores(MKV,3); //error de segmento
         }
-        break;   
-    } 
+    }
+}
+
+void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis){
+    int i,j,x,y;
+    if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[2]){ //cambiar
+        for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
+            x = 0;
+            printf("[%04X]: ",dirfis);
+            for(k=0;k<i;k++){ //DIMENSION, cantidad de celdas a leer para cada dato
+                x = x << 8;
+                x =  x +(int) MKV->mem[dirfis] ;
+                if((MKV->reg[EAX] & 0x02) == 0X02){ //ES UN CHAR
+                    y = MKV->mem[dirfis];
+                    if(y > 31 && y < 127)
+                        printf("%c",y);
+                    else
+                        printf(". ");
+                }
+                dirfis++;
+            }
+            printf(" ");
+            if((MKV->reg[EAX] & 0x08) == 0x08) //ES HEXADECIMAL
+                printf("0x%X ",x);
+            if((MKV->reg[EAX] & 0x04) == 0x04) //ES OCTAL
+                printf("0o%o ",x);
+            if((MKV->reg[EAX] & 0x01) == 0X01) //ES DECIMAL
+                printf("%d ",x);
+            if((MKV->reg[EAX] & 0x10) == 0x10) //ES BINARIO
+                print_bin(x);
+            printf("\n");
+        }
+    }
+    else{
+        verificaerrores(MKV,3); //error de segmento
+    }
+}
+
+void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis){
+    char cadena[200] = {0};
+    int len;
+    fgets(cadena, sizeof(cadena), stdin); // va guardando en la variable cadena hasta leer \n, pero lo guarda 
+    int len = strlen(cadena);
+    if (len > 0 && cadena[len - 1] == '\n') { 
+        cadena[len - 1] = '\0';
+        len--;
+    }
+    
+}
+
+void SYS4 (TipoMKV *MKV,int dirfis){
+    int i=0;
+    while(MKV->mem[dirfis+i]!=0){ // el programador deber ser prolijo, si no printea toda la memoria
+        printf("%c",MKV->mem[dirfis+i]);
+        i++;
+    }
+}
+
+void SYS7 (){
+    system("cls");
+}
+
+void SYSF (){
+
 }
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
@@ -339,8 +390,30 @@ void NOT(TipoMKV *MKV, int opA, int TopA){
     NZ_CC(valorA,MKV);
 }
 
+void PUSH(TipoMKV *MKV, int opA, int TopA){ //controlar el STACK OVERFLOW
+    int valorA;
+    MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
+    if(MKV->reg[SP]>/*LO Q HAYA EN LA TABLA*/){
+        valorA=getValor(MKV,opA,TopA);
+        MKV->reg[SP] = valorA;
+    }
+    else
+        verificaerrores(MKV,5) //STACK OVERFLOW
+}
 
+void POP(TipoMKV *MKV){ // solo modifica el registro SP, controlar el STACK UNDERFLOWint valorA;
+    MKV->reg[SP]+=4; //Muevo SP 4 posiciones(1 celda)para ingresar el nuevo valor en el stack
+    if(MKV->reg[SP]>/*LO Q HAYA EN LA TABLA*/)
+        verificaerrores(MKV,6) //STACK UNDERFLOW
+}
 
+void CALL(){ //almacenará en la pila los 4 bytes del valor del IP
+
+}
+
+void RET(){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
+
+}
 
 
 

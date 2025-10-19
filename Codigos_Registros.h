@@ -5,6 +5,8 @@
 #define OPC 4   // Instruccion
 #define OPA 5   // Instruccion
 #define OPB 6   // Instruccion
+#define SP 7   // Puntero al Tope de la pila
+#define BP 8   // Puntero a una posicion de la pila
 
 #define EAX 10  //Registro de proposito general
 #define EBX 11  //Registro de proposito general
@@ -15,5 +17,9 @@
 #define AC  16  //Acumulador y Resto de la ALU
 #define CC  17  //Codigo de condicion resultados N y Z
 
-#define CS  26  //Segmento de codigo
-#define DS  27  //Segmento de datos
+#define CS  26  //Code Segment
+#define DS  27  //Data Segment
+#define ES  28  //Extra Segment
+#define SS  29  //Stack Segment
+#define KS  30  //Const Segment
+#define PS  31  //Param Segment

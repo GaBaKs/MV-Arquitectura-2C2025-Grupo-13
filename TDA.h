@@ -8,9 +8,10 @@
 #define ENTRADAS
 typedef struct TipoMKV{
     int reg[REGISTROS];           // Cantidad de registros
-    unsigned char mem[MEMORIA];            // Cantidad de memoria
+    unsigned char *mem;            // Cantidad de memoria
     unsigned short tabla_seg[4]; // tabla_seg[SEGMENTOS][ENTRADAS] 6 filas para los segmentos y 2 columnas para donde empieza y cuanto mide habria que cambiar bastante
     int flag;
+    int tamanoRAM;
 }TipoMKV;
 
 

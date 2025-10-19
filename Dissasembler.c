@@ -52,6 +52,12 @@ void devuelveRegistro(unsigned char car){
     case 0x06:
         printf("OP2");
         break;
+    case 0x07:
+        printf("SP");
+        break;
+    case 0x08:
+        printf("BP");
+        break;
     case 17:
         printf("CC");
         break;
@@ -60,6 +66,18 @@ void devuelveRegistro(unsigned char car){
         break;
     case 0x1B:  
         printf("DS");
+        break;
+    case 0x1C:
+        printf("ES");
+        break;
+    case 0x1D:
+        printf("SS");
+        break;
+    case 0x1E:
+        printf("KS");
+        break;
+    case 0x1F:
+        printf("PS");
         break;
     case 0x10:
         printf("AC");
@@ -86,7 +104,6 @@ void devuelveRegistro(unsigned char car){
 }
 
 void imprimeMnemonico(unsigned char cod){ 
-
     switch(cod){
         case 0x00: 
             printf("SYS ");
@@ -114,6 +131,18 @@ void imprimeMnemonico(unsigned char cod){
             break;
         case 0x08:
             printf("NOT ");
+            break;
+        case 0x0B:
+            printf("PUSH ");
+            break;
+        case 0x0C:
+            printf("POP ");
+            break;
+        case 0x0D:
+            printf("CALL ");
+            break;
+        case 0x0E:
+            printf("RET ");
             break;
         case 0x10: 
             printf("MOV ");

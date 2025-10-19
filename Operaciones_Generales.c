@@ -20,6 +20,15 @@ void verificaerrores(TipoMKV *MKV, int codigo_error){
             break;  
         case 4:
             printf("ERROR: FORMATO NO ESPECIFICADO");
+            break;
+        case 5:
+            printf("ERROR: Stack overflow");  
+            break;
+        case 6:
+            printf("ERROR: Stack underflow");  
+            break;
+        case 7:
+            printf("ERROR: Memoria insuficiente");  
     }
     MKV->flag = 1;
 }
@@ -117,7 +126,7 @@ int escopeta2bytes(int corredera){
 }
 
 int codinvalido(char cod){
-    if ((cod<0x0F && cod>=0x09) || cod>0x1F || cod<0x0)
+    if ((cod<0x0B && cod>=0x09) || cod>0x1F || cod<0x0)
         return 1;
     else
         return 0;
