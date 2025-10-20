@@ -79,20 +79,34 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){ //D
 
 void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * flag,int argc2,int argv2[200]){
     int i=1;
-    argc2=-1;
-    while (i<argc && strstr(argv[i],"-p")!=NULL)
+    argc2=0;
+    while (i<argc && strcmp(argv[i],"-p")!=0)
         i++;
-    if (i<argc){
+    if (i<argc){        // hay -p
         *flag=1;
         int aux=0;
         i++;
         while (i<argc){
-            strcpy(MKV->mem[aux],argv[i]);
-            argc2++;
+            int largo=strlen(argv[i]);
             argv2[argc2]=aux;       //aux va a ir contando el inicio de cada palabra, osea que calcula el offset
-            aux+=strlen(argv[i])+1;
+            argc2++;
+            for (int k=0;k<=largo;k++){
+                MKV->mem[k]=argv[i][k]; // guardo char a char las palabras con el nulo
+                aux++;
+            }
+            
             i++;
         }
+        // guardo las direcciones despues de todos los datos
+        i=0;
+        int largo=0;
+        while (i<argc2){
+            for (int k=0;k<=largo;k++){ // hacer mascara
+                MKV->mem[k]=argv[i][k]; // guardo char a char las palabras con el nulo
+                aux++;
+            }
+            i++;
+        } 
 
     }
 }
