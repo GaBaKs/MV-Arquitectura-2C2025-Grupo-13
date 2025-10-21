@@ -8,9 +8,9 @@
 #include "Operaciones.h"
 #include "Codigos_Registros.h"
 #include "Dissasembler.h"
-
+#define nulo -1
 int verifica_cabecera(unsigned char cabecera[5]);
-void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[])
+void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]);
 void ejecucion(TipoMKV *MKV);
 
 int main(int argc, char *argv[]){
@@ -19,26 +19,30 @@ int main(int argc, char *argv[]){
     MKV.tamanoRAM=MEMORIA;
     char str[200]=argv[0];
     int j=1;  
-
-    inicializacion(str,&MKV,argc,argv);
+    MKV.flag=0;
     
-    
-    //compruebo dissa
+//compruebo dissa
     while (j<argc && (strcmp(argv[j],"-d")==0))
         j++;
     if (j<argc){
          dissa(MKV);
          printf("\n");
     }
+
+
+    inicializacion(str,&MKV,argc,argv);
     ejecucion(&MKV);
     return 1;
 }
 
-void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){ //DIOS
+void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){ 
     FILE *arch;
     int i;
     i = 0;
     int desp=0;
+    int tamPS;
+    int argv2[100];
+    int argc2;
     unsigned char cabecera[7];
     arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
@@ -63,9 +67,20 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){ //D
             }
             else
                 if (cabecera==2){           //VMX25 parte 2
+                    MKV->reg[CS]=-1;
+                    MKV->reg[DS]=-1;
+                    MKV->reg[ES]=-1;
+                    MKV->reg[SS]=-1;
+                    MKV->reg[KS]=-1;
+                    MKV->reg[PS]=-1;
+                    int vectoraux[6];
                     inicia_Memoria(argc,argv,MKV);
-                    cargaPS(MKV,argc,argv);
-                    //continuolectura
+                    cargaPS(MKV,argc,argv,&tamPS,&argc2,argv2);
+                    vectoraux[5]=tamPS;
+                    for(int j=0;j<5;j++){
+                        fread(vectoraux[j],sizeof(unsigned char),1,arch);
+                    }
+                    creotablaseg(MKV,vectoraux);
                 }
                 else
                     if (cabecera==3){       //VMI25 1
@@ -77,38 +92,78 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){ //D
            
 }
 
-void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * flag,int argc2,int argv2[200]){
-    int i=1;
-    argc2=0;
+void creotablaseg(TipoMKV *MKV,int vectoraux[]){
+    int contseg=0;
+    int base=0;
+    int suma=0;
+    int i=0;
+    while (i<6 && suma<=MKV->tamanoRAM){
+        suma+=vectoraux[i];
+        i++;
+    }
+    if (suma>MKV->tamanoRAM){
+        verificaerrores(MKV,7); //error de insuficiente memoria
+    }
+    else{
+        if (vectoraux[5]!=-1){      // hay param segment
+            MKV->tabla_seg[contseg][0]=base;
+            MKV->tabla_seg[contseg][1]=vectoraux[5];
+            MKV->reg[PS]=contseg<<16;
+            base+=vectoraux[5];
+            contseg++;
+        }
+        if (vectoraux[4]!=0){   // hay const segment
+            MKV->tabla_seg[contseg][0]=base;
+            MKV->tabla_seg[contseg][1]=vectoraux[4];
+            MKV->reg[KS]=contseg<<16;
+            base+=vectoraux[4];
+            contseg++;
+        }
+        for (int i=0;i<4;i++){
+            if (vectoraux[i]!=0){
+                MKV->tabla_seg[contseg][0]=base; 
+                MKV->tabla_seg[contseg][1]=vectoraux[i];
+                MKV->reg[26+i]=contseg<<16;          //situa en orden CS, DS, ES y SS
+                base+=vectoraux[i];
+                contseg++;
+            }
+        }
+    }
+}
+
+void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2[200]){
+    int i=0;
+   *argc2=0;
+    int aux=0;
     while (i<argc && strcmp(argv[i],"-p")!=0)
         i++;
     if (i<argc){        // hay -p
-        *flag=1;
-        int aux=0;
         i++;
         while (i<argc){
             int largo=strlen(argv[i]);
-            argv2[argc2]=aux;       //aux va a ir contando el inicio de cada palabra, osea que calcula el offset
-            argc2++;
+            argv2[*argc2]=aux;       //aux va a ir contando el inicio de cada palabra, osea que calcula el offset
+            *argc2++;
             for (int k=0;k<=largo;k++){
-                MKV->mem[k]=argv[i][k]; // guardo char a char las palabras con el nulo
+                MKV->mem[aux]=argv[i][k]; // guardo char a char las palabras con el nulo
                 aux++;
             }
-            
             i++;
         }
         // guardo las direcciones despues de todos los datos
-        i=0;
-        int largo=0;
-        while (i<argc2){
-            for (int k=0;k<=largo;k++){ // hacer mascara
-                MKV->mem[k]=argv[i][k]; // guardo char a char las palabras con el nulo
+        for (i=0;i<*argc2;i++){
+            for (int k=4;k>0;k--){ // hacer mascara
+                MKV->mem[aux]=(char)(argv2[i] >> (((k-1)*8)) & 0x000000FF) ;  // guarda en memoria los punteros a cada palabra
                 aux++;
             }
-            i++;
         } 
-
+        (*tamPS) = aux;
     }
+    else
+        (*tamPS) = -1;
+}
+
+void inicia_SS(){
+    
 }
 
 void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV){ //Inicia la memoria RAM
@@ -167,8 +222,12 @@ int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cab
         return 0;           // error
 }
 
+void leeVMI(){
+
+}
+
 void ejecucion(TipoMKV *MKV){
-    MKV->flag=0;
+
     unsigned char instruccion;
     int TopA,TopB;
     int dirfis;

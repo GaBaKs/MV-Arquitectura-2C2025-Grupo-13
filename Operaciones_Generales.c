@@ -53,6 +53,22 @@ int logifisi(TipoMKV MKV,int dirlog){
         }
 }
 
+/*
+int logifisi(TipoMKV MKV,int dirlog){
+    int dirfis,segmento,offset,base;
+    segmento=(dirlog & 0x00010000)>>16; 
+    offset=dirlog & 0x0000FFFF;
+    dirfis = MKV.tabla_seg[segmento][0]+offset;
+    if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
+        return dirfis;
+    else
+        return -1 
+    }
+}
+*/
+
+
+
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
     int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+( op & MASC_OFFSET);
