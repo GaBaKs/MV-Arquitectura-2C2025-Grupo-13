@@ -11,13 +11,19 @@
 #define nulo -1
 int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]);
+void creotablaseg(TipoMKV *MKV,int vectoraux[])
 void ejecucion(TipoMKV *MKV);
+void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2[200]);
+void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV)
+int detecta_Tipo_Arch(char *argv[]);
+
 
 int main(int argc, char *argv[]){
     printf("Bienvenido a la Maquina virtual del grupo 13! Autores: Mario Arriaga, Tomas Candotto y Gabriel Seneca :)\n");
     TipoMKV MKV;
     MKV.tamanoRAM=MEMORIA;
-    char str[200]=argv[0];
+    char str[200];
+    strcpy(str,argv[0]);
     int j=1;  
     MKV.flag=0;
     
@@ -53,13 +59,12 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
             }    
             int cabecera=verifica_cabecera(cabecera);       //verifico la version
             if (cabecera==1){           //VMX25 parte 1
-                fread(&MKV->tabla_seg[0],sizeof(unsigned char),1,arch);         // base CS 
-                fread(&MKV->tabla_seg[1], sizeof(unsigned char), 1, arch);        // tamano max CS
-                MKV->tabla_seg[2]=MKV->tabla_seg[1];                            //base DS
-                MKV->tabla_seg[3]=16384-MKV->tabla_seg[2];                      //tamano max DS
-                MKV->tabla_seg[0]=0;
+                fread(&MKV->tabla_seg[0][0],sizeof(unsigned char),1,arch);         // base CS 
+                fread(&MKV->tabla_seg[0][1], sizeof(unsigned char), 1, arch);        // tamano max CS
+                MKV->tabla_seg[1][0]=MKV->tabla_seg[0][1];                            //base DS
+                MKV->tabla_seg[1][1]=16384-MKV->tabla_seg[1][0];                      //tamano max DS
                 
-                while (fread(&MKV->mem[MKV->tabla_seg[0]+desp], sizeof(char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
+                while (fread(&MKV->mem[MKV->tabla_seg[0][0]+desp], sizeof(char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
                     desp++;                    
                 }
                 printf("Lectura de archivo realizada correctamente para la version 1\n");
@@ -81,6 +86,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
                         fread(vectoraux[j],sizeof(unsigned char),1,arch);
                     }
                     creotablaseg(MKV,vectoraux);
+                    MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
                 }
                 else
                     if (cabecera==3){       //VMI25 1

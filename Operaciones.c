@@ -390,19 +390,21 @@ void NOT(TipoMKV *MKV, int opA, int TopA){
     NZ_CC(valorA,MKV);
 }
 
-void PUSH(TipoMKV *MKV, int opA, int TopA){ //controlar el STACK OVERFLOW
+void PUSH(TipoMKV *MKV, int opA, int TopA){
     int valorA;
-    MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
-    if(MKV->reg[SP]>/*LO Q HAYA EN LA TABLA*/){
+    if (MKV->reg[SP]<MKV->reg[SS]){
+        MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
         valorA=getValor(MKV,opA,TopA);
-        MKV->reg[SP] = valorA;
+        //recontruir valor cuando arreglemos setvalor
     }
     else
-        verificaerrores(MKV,5) //STACK OVERFLOW
+        verificaerrores(MKV,5); //STACK OVERFLOW
 }
 
-void POP(TipoMKV *MKV){ // solo modifica el registro SP, controlar el STACK UNDERFLOWint valorA;
-    MKV->reg[SP]+=4; //Muevo SP 4 posiciones(1 celda)para ingresar el nuevo valor en el stack
+void POP(TipoMKV *MKV,int opA,int TopA){ // solo modifica el registro SP, controlar el STACK UNDERFLOW;
+
+    //reconstruyo valor a partir de SP
+    MKV->reg[SP]+=4;
     if(MKV->reg[SP]>/*LO Q HAYA EN LA TABLA*/)
         verificaerrores(MKV,6) //STACK UNDERFLOW
 }

@@ -29,10 +29,24 @@ void verificaerrores(TipoMKV *MKV, int codigo_error){
             break;
         case 7:
             printf("ERROR: Memoria insuficiente");  
+            break;
     }
     MKV->flag = 1;
 }
 
+int logifisi(TipoMKV MKV,int dirlog){
+    int dirfis,segmento,offset,base;
+    segmento=(dirlog & 0x000F0000)>>16; 
+    offset=dirlog & 0x0000FFFF;
+    dirfis = MKV.tabla_seg[segmento][0]+offset;
+    if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
+        return dirfis;
+    else
+        return -1;
+}
+
+
+/*
 int logifisi(TipoMKV MKV,int dirlog){ 
     int dirfis,segmento,offset;
     segmento=(dirlog & 0x00010000)>>16; 
@@ -52,20 +66,9 @@ int logifisi(TipoMKV MKV,int dirlog){
                 return -1;
         }
 }
-
-/*
-int logifisi(TipoMKV MKV,int dirlog){
-    int dirfis,segmento,offset,base;
-    segmento=(dirlog & 0x00010000)>>16; 
-    offset=dirlog & 0x0000FFFF;
-    dirfis = MKV.tabla_seg[segmento][0]+offset;
-    if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
-        return dirfis;
-    else
-        return -1 
-    }
-}
 */
+
+
 
 
 
