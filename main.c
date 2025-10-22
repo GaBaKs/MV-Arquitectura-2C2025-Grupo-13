@@ -49,6 +49,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
     int tamPS;
     int argv2[100];
     int argc2;
+    int aux;
     unsigned char cabecera[7];
     arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
@@ -87,6 +88,8 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
                     }
                     creotablaseg(MKV,vectoraux);
                     MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
+                    fread(&aux,sizeof(unsigned char),1,arch);
+                    MKV->reg[IP]=MKV->reg[CS]+aux;
                 }
                 else
                     if (cabecera==3){       //VMI25 1
@@ -240,9 +243,6 @@ void ejecucion(TipoMKV *MKV){
     int shift;
     void (*Fops2[16])(TipoMKV *, int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
     void (*Fops1[9])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, PUSH, POP, CALL};
-    MKV->reg[CS] = MKV->tabla_seg[0] << 16;                          //inicializo el CS en los 8 MSB
-    MKV->reg[DS] = 0x00010000;                    //Inicializo del DS una posicion mas del CS 
-    MKV->reg[IP] = MKV->reg[CS];
     while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<MKV->tabla_seg[1]+MKV->tabla_seg[0]){   // mientas no exista un error o se termine la memoria
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP

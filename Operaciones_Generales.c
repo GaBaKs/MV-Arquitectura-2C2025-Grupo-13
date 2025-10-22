@@ -213,9 +213,6 @@ if (str[0]=='1'){
     }
 }
 
-
-
-
 void print_bin(int n){
     printf("0b");
     for (int i = sizeof(n) * 8 - 1; i >= 0; i--) {

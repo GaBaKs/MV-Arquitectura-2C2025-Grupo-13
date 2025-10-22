@@ -392,29 +392,42 @@ void NOT(TipoMKV *MKV, int opA, int TopA){
 
 void PUSH(TipoMKV *MKV, int opA, int TopA){
     int valorA;
+    MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
     if (MKV->reg[SP]<MKV->reg[SS]){
-        MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
         valorA=getValor(MKV,opA,TopA);
-        //recontruir valor cuando arreglemos setvalor
+        int dirfis=logifisi(*MKV,MKV->reg[SP]);
+        for (int i=CANTCELDAS;i>0;i--){ 
+            MKV->mem[dirfis++]=(char)(valorA >> (((i-1)*8)) & 0x000000FF) ; 
+        }
     }
     else
         verificaerrores(MKV,5); //STACK OVERFLOW
 }
 
-void POP(TipoMKV *MKV,int opA,int TopA){ // solo modifica el registro SP, controlar el STACK UNDERFLOW;
-
-    //reconstruyo valor a partir de SP
+void POP(TipoMKV *MKV,int opA,int TopA){
+    int valor,aux;
+    if (MKV->reg[SP]+4<=MKV->reg[SS]+MKV->tabla_seg[MKV->reg[SS]&MASC_LDH][1]){
+        int dirfis=logifisi(*MKV,MKV->reg[SP]);
+     for (int i=0;i<4;i++){
+        valor<<=8;
+        aux=MKV->mem[dirfis+i];
+        valor+=aux;
+    }
     MKV->reg[SP]+=4;
-    if(MKV->reg[SP]>/*LO Q HAYA EN LA TABLA*/)
-        verificaerrores(MKV,6) //STACK UNDERFLOW
+    setValor(MKV,opA,TopA,valor);
+    }
+    else
+        verificaerrores(MKV,6); //STACK UNDERFLOW
 }
 
-void CALL(){ //almacenará en la pila los 4 bytes del valor del IP
-
+void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes del valor del IP
+    int valor=getValor(MKV,opA,TopA);
+    PUSH(MKV,IP,1);
+    MKV->reg[IP] = (MKV->reg[IP] & MASC_LDH) + valor;
 }
 
-void RET(){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
-
+void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
+    POP(MKV,IP,1);
 }
 
 
