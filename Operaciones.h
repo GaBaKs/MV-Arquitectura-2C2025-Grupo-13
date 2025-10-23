@@ -54,4 +54,11 @@ void JNN(TipoMKV *MKV, int opA, int TopA);
 
 void NOT(TipoMKV *MKV, int opA, int TopA);
 
+void PUSH(TipoMKV *MKV, int opA, int TopA);
+
+void POP(TipoMKV *MKV,int opA,int TopA);
+
+void CALL(TipoMKV *MKV,int opA,int TopA);
+
+void RET(TipoMKV *MKV);
 

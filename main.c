@@ -9,14 +9,15 @@
 #include "Codigos_Registros.h"
 #include "Dissasembler.h"
 #define nulo -1
+
 int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]);
-void creotablaseg(TipoMKV *MKV,int vectoraux[]);
+void creotablaseg(TipoMKV *MKV,short vectoraux[]);
 void ejecucion(TipoMKV *MKV);
 void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2[200]);
 void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV);
 int detecta_Tipo_Arch(char *argv[]);
-
+void inicia_SS(TipoMKV *MKV, int direccion, int argc);
 
 int main(int argc, char *argv[]){
     printf("Bienvenido a la Maquina virtual del grupo 13! Autores: Mario Arriaga, Tomas Candotto y Gabriel Seneca :)\n");
@@ -51,6 +52,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
     int argv2[100];
     int argc2;
     int aux;
+    int direccion;
     unsigned char cabecera[7];
     arch= fopen(nombre_arch, "rb");
         if (arch == NULL)
@@ -91,8 +93,16 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
                     MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
                     fread(&aux,sizeof(unsigned char),1,arch);
                     MKV->reg[IP]=MKV->reg[CS]+aux;
-                    inicia_SS();
-                    
+                    inicia_SS(MKV,direccion,argc);
+                    while ( desp != MKV->tabla_seg[(MKV->reg[CS]&MASC_LDH)>>16][1]){  //Guarda las instrucciones en el code segment
+                        fread(&MKV->mem[MKV->tabla_seg[(MKV->reg[CS]&MASC_LDH)>>16][0]+desp], sizeof(char), 1, arch);
+                        desp++;                    
+                    }
+                    desp=0;
+                    while(desp != MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][1]){  //Guarda las instrucciones en el code segment
+                        fread(&MKV->mem[MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][0]+desp], sizeof(char), 1, arch);  //Guarda las instrucciones en el code segment
+                        desp++;                    
+                    }
                     fclose(arch);
                 }
                 else
@@ -145,10 +155,12 @@ void creotablaseg(TipoMKV *MKV,short vectoraux[]){
     }
 }
 
-void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2[200]){
+void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int *direccion){
     int i=0;
    *argc2=0;
     int aux=0;
+    *direccion=-1;
+    int argv2[200];
     while (i<argc && strcmp(argv[i],"-p")!=0)
         i++;
     if (i<argc){        // hay -p
@@ -163,6 +175,7 @@ void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2
             }
             i++;
         }
+        *direccion=aux;
         // guardo las direcciones despues de todos los datos
         for (i=0;i<*argc2;i++){
             for (int k=4;k>0;k--){ // hacer mascara
@@ -176,18 +189,22 @@ void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2
         (*tamPS) = -1;
 }
 
-void inicia_SS(TipoMKV *MKV, char *argv2[], int argc){ //Revisar, ta como raro
+void inicia_SS(TipoMKV *MKV, int direccion, int argc){
     int dirfis;
-    MKV->reg[SP]-= 4;
-    dirfis=logifisi(*MKV,MKV->reg[SP]);
-    for (int i=CANTCELDAS;i>0;i--) 
-        MKV->mem[dirfis++]=(char)(*argv2[argc] >> (((i-1)*8)) & 0x000000FF); 
-    MKV->reg[SP]-= 4;
-    for (int i=CANTCELDAS;i>0;i--) 
-        MKV->mem[dirfis++]=(char)(argc >> (((i-1)*8)) & 0x000000FF); 
-    MKV->reg[SP]-= 4;
-    for (int i=CANTCELDAS;i>0;i--) 
-        MKV->mem[dirfis++]=(char)(-1 >> (((i-1)*8)) & 0x000000FF);
+    if (MKV->reg[SP]-12<MKV->reg[SS])
+        verificaerrores(MKV,5);    // STACK OVERFLOW
+    else{
+        MKV->reg[SP]-= 4;
+        dirfis=logifisi(*MKV,MKV->reg[SP]);
+        for (int i=CANTCELDAS;i>0;i--) 
+            MKV->mem[dirfis++]=(char)(direccion >> (((i-1)*8)) & 0x000000FF);       // carga puntero a 1er elemento de argv en PS
+        MKV->reg[SP]-= 4;
+        for (int i=CANTCELDAS;i>0;i--) 
+            MKV->mem[dirfis++]=(char)(argc >> (((i-1)*8)) & 0x000000FF);            //carga argc
+        MKV->reg[SP]-= 4;
+        for (int i=CANTCELDAS;i>0;i--) 
+            MKV->mem[dirfis++]=(char)(-1 >> (((i-1)*8)) & 0x000000FF);              //carga -1(para llamar con ret)
+    }
 }
 
 void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV){ //Inicia la memoria RAM
@@ -263,32 +280,27 @@ void ejecucion(TipoMKV *MKV){
                 getOperandos(MKV,instruccion,dirfis);
                 if (MKV->reg[OPC]==0x0F)                       // STOP
                     MKV->reg[IP]=-1;
-                else{
-                    if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos
-                        TopA=(instruccion & MASC_TOPA) >> 4;
-                        TopB=(instruccion & MASC_TOPB) >> 6;
-                        cambioip(MKV,TopA,TopB);
-                        Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
+                else
+                    if (MKV->reg[OPC]==0x0E)                    //RET
+                        RET(MKV);
+                    else{
+                        if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos
+                            TopA=(instruccion & MASC_TOPA) >> 4;
+                            TopB=(instruccion & MASC_TOPB) >> 6;
+                            cambioip(MKV,TopA,TopB);
+                            Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
+                        }
+                        else
+                            if (MKV->reg[OPC]==0x0A || MKV->reg[OPC]==0x09)
+                                verificaerrores(MKV,1);
+                            else
+                                if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
+                                    TopA=(instruccion & MASC_TOPB) >> 6;
+                                    cambioip(MKV,TopA,0);
+                                    Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
+                                } 
                     }
-                    else
-                        if (MKV->reg[OPC]==0x0A || MKV->reg[OPC]==0x09)
-                            verificaerrores(MKV,1);
-                        else
-                            if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
-                                TopA=(instruccion & MASC_TOPB) >> 6;
-                                cambioip(MKV,TopA,0);
-                                Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
-                            } 
-                        else
-                            if (MKV->reg[OPC]==0x0E){ //RET no posee operandos
-                                
-                            }
-                }
             }
         
     }
-
 }
-
-
-

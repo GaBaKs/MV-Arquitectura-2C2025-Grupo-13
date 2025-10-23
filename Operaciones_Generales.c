@@ -328,11 +328,11 @@ int getRegistro(TipoMKV MKV, int opA){
     switch(tipo){
         case 0: return MKV.reg[reg];
             break;
-        case 1: return MKV.reg[reg] & MASC_AL;
+        case 1: return ((MKV.reg[reg] & MASC_AL)<<24) >>24;
             break;
-        case 2: return (MKV.reg[reg] & MASC_AH)>> 8;
+        case 2: return ((MKV.reg[reg] & MASC_AH)<< 16) >>24;
             break;
-        case 3: return MKV.reg[reg] & MASC_AX;
+        case 3: return ((MKV.reg[reg] & MASC_AX)<<16) >>16;
             break;
         default: return MKV.reg[reg];
     }
@@ -354,7 +354,6 @@ void setRegistro(TipoMKV *MKV,int opA,int valorB){      //guarda un valorB de 4 
     }
 }
 
-
 void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega siendo un inmediato
 
     valorB=(escopeta2bytes(valorB));
@@ -367,17 +366,27 @@ void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega sien
             larmar(MKV,opA);
             MKV->reg[MBR]=valorB;
             setMemoria(MKV);    
-        }
-      
+        }  
 }
 
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
     int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+( op & MASC_OFFSET);
     int auxL=logifisi(*MKV,dirlog);
+    int opmem;
     MKV->reg[LAR]=dirlog;
-    if (auxL!=-1)
-        MKV->reg[MAR]= 0x00040000+auxL; //HARDCODEADO
+    if (auxL!=-1){
+        opmem=op & MASC_OPMEM;
+        if (opmem==0)
+             MKV->reg[MAR]= 0x00040000+auxL;
+        else
+            if (opmem==2)
+                MKV->reg[MAR]= 0x00020000+auxL;
+            else
+                if (opmem=3)
+                    MKV->reg[MAR]= 0x00010000+auxL;        
+    }
+        
     else{
         verificaerrores(MKV,3);
     }
@@ -400,14 +409,15 @@ void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la di
     int segmento;
     int dirfis,valor=MKV->reg[MBR];
     dirfis=MKV->reg[MAR] & MASC_MARL;
-    segmento=(MKV->reg[MAR] & 0x000F0000)>>16;
-    if (dirfis+CANTCELDAS<=MEMORIA && dirfis>=MKV->tabla_seg[segmento][1])
-        for (int i=CANTCELDAS;i>0;i--){ 
+    int cantceldas=(MKV->reg[MAR] & MASC_LDH) >> 16;
+    dirfis+=4-cantceldas;
+    segmento=(MKV->reg[LAR] & 0x000F0000)>>16;
+    if (dirfis+cantceldas<=MKV->tamanoRAM && dirfis>=MKV->tabla_seg[segmento][1])
+        for (int i=cantceldas;i>0;i--){ 
             MKV->mem[dirfis++]=(char)(valor >> (((i-1)*8)) & 0x000000FF) ; 
         }
     else{ 
         verificaerrores(MKV,3); //fallo de segmento
-    }
-    
+    }  
 }
 

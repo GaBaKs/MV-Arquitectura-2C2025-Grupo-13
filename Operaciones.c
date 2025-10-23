@@ -19,8 +19,6 @@ void NZ_CC (int valor, TipoMKV *MKV){
 }   //lo afectan ADD, SUB, MUL, DIV, CMP, AND, OR, XOR, SHL, SHR, SAR, NOT
 
 
-
-
 void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
@@ -180,30 +178,30 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
     cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
     switch(opA){
     
-     case 1:
+    case 1:
         SYS1(MKV,cantDatos,dirfis);
         break;
-
     case 2:
         SYS2(MKV,cantDatos,dirfis);
         break;
     case 3: //STRING READ
-        SYS3(MKV,cantDatos,dirfis):
+        SYS3(MKV,MKV->reg[ECX],dirfis);
         break;
     case 4: //STRING WRITE
-        SYS4(MKV,dirfis):
+        SYS4(MKV,dirfis);
         break;
     case 7: //CLEAR SCREEN
-        SYS7():
+        SYS7();
         break;
-    case 0xF; //BREAKPOINT
-        SYSF():
+    case 0xF: //BREAKPOINT
+        SYSF();
         break;
 
     } 
 }
+
 void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
-    int flag=0,j,dato;
+    int flag=0,j,i,dato;
     char c[100];
     char bin[33];
     //verifico que formato tengo que leer
@@ -248,7 +246,7 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
 }
 
 void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis){
-    int i,j,x,y;
+    int i,j,x,y,k;
     if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[2]){ //cambiar
         for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
             x = 0;
@@ -285,13 +283,25 @@ void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis){
 void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis){
     char cadena[200] = {0};
     int len;
+    int i=0;
     fgets(cadena, sizeof(cadena), stdin); // va guardando en la variable cadena hasta leer \n, pero lo guarda 
     int len = strlen(cadena);
     if (len > 0 && cadena[len - 1] == '\n') { 
         cadena[len - 1] = '\0';
         len--;
     }
-    
+    if (cantDatos==-1) // si cantDatos es -1, significa que no se paso un limite, por lo que se toma el largo de la cadena
+        cantDatos=len;
+    if (dirfis+cantDatos<=MKV->tabla_seg[(MKV->reg[DS]&MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[DS]&MASC_LDH)>>16][1]){ //verifico que no se pase del segmento
+        while (i<len && i<cantDatos){ 
+            MKV->mem[dirfis+i]=cadena[i];
+            i++;
+        }
+        if (i<len && i>=cantDatos)
+            MKV->mem[dirfis+i]=0; //agrego el \0 al fina, en este caso se trunca la cadena por ser mas larga que el espacio reservado
+    } 
+    else
+        verificaerrores(MKV,3); //error de segmento
 }
 
 void SYS4 (TipoMKV *MKV,int dirfis){
@@ -312,7 +322,7 @@ void SYSF (){
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
    int valor=getValor(MKV,opA,TopA);
-   if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+   if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         MKV->reg[IP]=valor;
     }
     else
@@ -321,7 +331,7 @@ void JMP(TipoMKV *MKV, int opA, int TopA){
 
 void JZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == MASC_Z){
             MKV->reg[IP]=valor;
         }
@@ -332,7 +342,7 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
 
 void JP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0){
             MKV->reg[IP]=valor;
         }
@@ -343,7 +353,7 @@ void JP(TipoMKV *MKV, int opA, int TopA){
 
 void JN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=valor;
     }
@@ -363,7 +373,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
 
 void JNP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N || (MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=valor;
     }
@@ -373,7 +383,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
 
 void JNN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0)
             MKV->reg[IP]=valor;
     }
