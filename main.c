@@ -11,10 +11,10 @@
 #define nulo -1
 int verifica_cabecera(unsigned char cabecera[5]);
 void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]);
-void creotablaseg(TipoMKV *MKV,int vectoraux[])
+void creotablaseg(TipoMKV *MKV,int vectoraux[]);
 void ejecucion(TipoMKV *MKV);
 void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2[200]);
-void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV)
+void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV);
 int detecta_Tipo_Arch(char *argv[]);
 
 
@@ -27,16 +27,17 @@ int main(int argc, char *argv[]){
     int j=1;  
     MKV.flag=0;
     
-//compruebo dissa
+
+
+
+    inicializacion(str,&MKV,argc,argv);
+    //compruebo dissa
     while (j<argc && (strcmp(argv[j],"-d")==0))
         j++;
     if (j<argc){
          dissa(MKV);
          printf("\n");
     }
-
-
-    inicializacion(str,&MKV,argc,argv);
     ejecucion(&MKV);
     return 1;
 }
@@ -79,21 +80,25 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
                     MKV->reg[SS]=-1;
                     MKV->reg[KS]=-1;
                     MKV->reg[PS]=-1;
-                    int vectoraux[6];
+                    unsigned short vectoraux[6];
                     inicia_Memoria(argc,argv,MKV);
                     cargaPS(MKV,argc,argv,&tamPS,&argc2,argv2);
                     vectoraux[5]=tamPS;
                     for(int j=0;j<5;j++){
-                        fread(vectoraux[j],sizeof(unsigned char),1,arch);
+                        fread(vectoraux[j],sizeof(short),1,arch);
                     }
                     creotablaseg(MKV,vectoraux);
                     MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
                     fread(&aux,sizeof(unsigned char),1,arch);
                     MKV->reg[IP]=MKV->reg[CS]+aux;
+                    inicia_SS();
+                    
+                    fclose(arch);
                 }
                 else
                     if (cabecera==3){       //VMI25 1
-
+                        fclose(arch);
+                        cargaVMI(MKV,nombre_arch);
                     }
                     else
                         printf("Error al leer cabecera");
@@ -101,7 +106,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[]){
            
 }
 
-void creotablaseg(TipoMKV *MKV,int vectoraux[]){
+void creotablaseg(TipoMKV *MKV,short vectoraux[]){
     int contseg=0;
     int base=0;
     int suma=0;
@@ -171,8 +176,18 @@ void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2,int argv2
         (*tamPS) = -1;
 }
 
-void inicia_SS(){
-    
+void inicia_SS(TipoMKV *MKV, char *argv2[], int argc){ //Revisar, ta como raro
+    int dirfis;
+    MKV->reg[SP]-= 4;
+    dirfis=logifisi(*MKV,MKV->reg[SP]);
+    for (int i=CANTCELDAS;i>0;i--) 
+        MKV->mem[dirfis++]=(char)(*argv2[argc] >> (((i-1)*8)) & 0x000000FF); 
+    MKV->reg[SP]-= 4;
+    for (int i=CANTCELDAS;i>0;i--) 
+        MKV->mem[dirfis++]=(char)(argc >> (((i-1)*8)) & 0x000000FF); 
+    MKV->reg[SP]-= 4;
+    for (int i=CANTCELDAS;i>0;i--) 
+        MKV->mem[dirfis++]=(char)(-1 >> (((i-1)*8)) & 0x000000FF);
 }
 
 void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV){ //Inicia la memoria RAM
@@ -181,11 +196,10 @@ void inicia_Memoria(int argc, char *argv[], TipoMKV *MKV){ //Inicia la memoria R
         j++;
     if (j<argc){
          MKV->tamanoRAM=(unsigned int)atoi(argv[j] + 2);
-    }*
+    }
 
     MKV->mem = (unsigned char*)malloc((MKV->tamanoRAM) * sizeof(unsigned char));    
 }
-
 
 int detecta_Tipo_Arch(char *argv[]){ //Funcion que detecta si el archivo es un .vmx, un .vmi o ambos
     int i;
@@ -217,33 +231,28 @@ int verifica_cabecera(unsigned char cabecera[]){ //Verifica la version de la cab
         i++;
     }
     if (i==5){
-        if (cabecera[2]=='X' && cabecera[6]==0b00000001)  
+        if (cabecera[2]=='X' && cabecera[5]==0b00000001)  
                 return 1;       // VMX primera version
         
         else
-            if (cabecera[2]=='X' && cabecera[6]==0b00000010)
+            if (cabecera[2]=='X' && cabecera[5]==0b00000010)
                 return 2;   //VMX segunda version
             else    
-                if (cabecera[2]=='I' && cabecera[6]==0b00000001)        
-                return 3;   // VMI25
+                if (cabecera[2]=='I' && cabecera[5]==0b00000001)        
+                return 3;   // VMI25 
     }
     else                
         return 0;           // error
 }
 
-void leeVMI(){
-
-}
-
 void ejecucion(TipoMKV *MKV){
-
     unsigned char instruccion;
     int TopA,TopB;
     int dirfis;
     int shift;
     void (*Fops2[16])(TipoMKV *, int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
-    void (*Fops1[9])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, PUSH, POP, CALL};
-    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<MKV->tabla_seg[1]+MKV->tabla_seg[0]){   // mientas no exista un error o se termine la memoria
+    void (*Fops1[12])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, PUSH, POP, CALL};
+    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
@@ -262,11 +271,14 @@ void ejecucion(TipoMKV *MKV){
                         Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                     }
                     else
-                        if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
-                            TopA=(instruccion & MASC_TOPB) >> 6;
-                            cambioip(MKV,TopA,0);
-                            Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
-                        }
+                        if (MKV->reg[OPC]==0x0A || MKV->reg[OPC]==0x09)
+                            verificaerrores(MKV,1);
+                        else
+                            if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
+                                TopA=(instruccion & MASC_TOPB) >> 6;
+                                cambioip(MKV,TopA,0);
+                                Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
+                            } 
                         else
                             if (MKV->reg[OPC]==0x0E){ //RET no posee operandos
                                 

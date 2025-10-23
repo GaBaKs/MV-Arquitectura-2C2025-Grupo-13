@@ -25,7 +25,6 @@ void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     setValor(MKV,opA,TopA,valorB);
-
 }
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
