@@ -2,8 +2,6 @@
 
 void NZ_CC (int valor, TipoMKV *MKV);
 
-int get_Valor (TipoMKV *MKV,int op,int Top);
-
 void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB);
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB);
@@ -37,6 +35,18 @@ void LDH (TipoMKV *MKV, int opA, int TopA, int opB, int TopB);
 void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB);
 
 void SYS(TipoMKV *MKV, int opA, int TopA);
+
+void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento);
+
+void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento);
+
+void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis, int segmento);
+
+void SYS4 (TipoMKV *MKV,int dirfis, int segmento);
+
+void SYS7 ();
+
+void SYSF (TipoMKV *MKV);
 
 void JMP(TipoMKV *MKV, int opA, int TopA);
 

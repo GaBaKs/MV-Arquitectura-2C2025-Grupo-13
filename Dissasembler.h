@@ -3,7 +3,7 @@
 
 void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB, int TopA, int TopB);
 
-char* devuelveRegistro(unsigned char car);
+void devuelveRegistro(int registro);
 
 void imprimeMnemonico(unsigned char cod);
 

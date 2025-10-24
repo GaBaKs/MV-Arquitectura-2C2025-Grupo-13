@@ -166,41 +166,7 @@ void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     setValor(MKV,opA,TopA,valorA);
 }
 
-void SYS(TipoMKV *MKV, int opA, int TopA){
-    int i,k,dirfis,j,tam,dato,x;
-    char y;
-    int flag=0;
-    unsigned int cantDatos;
-    char c[100];
-    char bin[33];
-    dirfis=logifisi(*MKV,MKV->reg[EDX]);
-    i=(MKV->reg[ECX] & MASC_LDH) >> 16; //tamanio por celda
-    cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
-    switch(opA){
-    
-    case 1:
-        SYS1(MKV,cantDatos,dirfis);
-        break;
-    case 2:
-        SYS2(MKV,cantDatos,dirfis);
-        break;
-    case 3: //STRING READ
-        SYS3(MKV,MKV->reg[ECX],dirfis);
-        break;
-    case 4: //STRING WRITE
-        SYS4(MKV,dirfis);
-        break;
-    case 7: //CLEAR SCREEN
-        SYS7();
-        break;
-    case 0xF: //BREAKPOINT
-        SYSF();
-        break;
-
-    } 
-}
-
-void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
+void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento){
     int flag=0,j,i,dato;
     char c[100];
     char bin[33];
@@ -208,7 +174,6 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
     for (j=0;j<cantDatos;j++){         //cantidad de numeros a leer
         printf("[%04X]: ",dirfis);
         switch(MKV->reg[EAX]){
-
         case 0x01:scanf("%d",&dato);
                 break;
         case 0x02: scanf("%s",c);
@@ -224,18 +189,18 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
         default:
                 verificaerrores(MKV,4); // error de formato
         }
-        if (dirfis+i*cantDatos<=MEMORIA && dirfis>=MKV->tabla_seg[2]){ //cambiar
+        if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+i*cantDatos<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
             if(!flag)
-            for (int k=i-1;k>=0;k--){      //tamanio de celda
-                int aux=(dato & 0xFF000000) >> 24;
-                MKV->mem[dirfis++]=aux ;
-                dato<<=8;
-            }
+                for (int k=i-1;k>=0;k--){      //tamanio de celda
+                    int aux=(dato & 0xFF000000) >> 24;
+                    MKV->mem[dirfis++]=aux ;
+                    dato<<=8;
+                }
             else{
                 for (int k=i-1;k>=0;k--){     //tamanio de celda
                 MKV->mem[dirfis++]=c[i-k-1];
                 printf("%c", MKV->mem[dirfis-1]);
-            } 
+                } 
             }
                 
         }        
@@ -245,9 +210,9 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis){
     }
 }
 
-void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis){
+void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento){
     int i,j,x,y,k;
-    if (dirfis+i<=MEMORIA && dirfis>=MKV->tabla_seg[2]){ //cambiar
+    if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+i<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
         for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
             x = 0;
             printf("[%04X]: ",dirfis);
@@ -280,35 +245,38 @@ void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis){
     }
 }
 
-void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis){
+void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis, int segmento){
     char cadena[200] = {0};
-    int len;
+    int lengo;
     int i=0;
     fgets(cadena, sizeof(cadena), stdin); // va guardando en la variable cadena hasta leer \n, pero lo guarda 
-    int len = strlen(cadena);
-    if (len > 0 && cadena[len - 1] == '\n') { 
-        cadena[len - 1] = '\0';
-        len--;
+    lengo = strlen(cadena);
+    if (lengo > 0 && cadena[lengo - 1] == '\n') { 
+        cadena[lengo - 1] = '\0';
+        lengo--;
     }
     if (cantDatos==-1) // si cantDatos es -1, significa que no se paso un limite, por lo que se toma el largo de la cadena
-        cantDatos=len;
-    if (dirfis+cantDatos<=MKV->tabla_seg[(MKV->reg[DS]&MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[DS]&MASC_LDH)>>16][1]){ //verifico que no se pase del segmento
-        while (i<len && i<cantDatos){ 
+        cantDatos=lengo;
+    if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+cantDatos<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){ //verifico que no se pase del segmento
+        while (i<lengo && i<cantDatos){ 
             MKV->mem[dirfis+i]=cadena[i];
             i++;
         }
-        if (i<len && i>=cantDatos)
+        if (i<lengo && i>=cantDatos)
             MKV->mem[dirfis+i]=0; //agrego el \0 al fina, en este caso se trunca la cadena por ser mas larga que el espacio reservado
     } 
     else
         verificaerrores(MKV,3); //error de segmento
 }
 
-void SYS4 (TipoMKV *MKV,int dirfis){
+void SYS4 (TipoMKV *MKV,int dirfis, int segmento){
     int i=0;
-    while(MKV->mem[dirfis+i]!=0){ // el programador deber ser prolijo, si no printea toda la memoria
+    while(MKV->mem[dirfis+i]!=0 && dirfis+i<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){ // el programador deber ser prolijo, si no printea toda la memoria
         printf("%c",MKV->mem[dirfis+i]);
         i++;
+    }
+    if (dirfis+i>MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
+        verificaerrores(MKV,3);
     }
 }
 
@@ -316,8 +284,43 @@ void SYS7 (){
     system("cls");
 }
 
-void SYSF (){
+void SYSF (TipoMKV *MKV){
+    MKV->breakpoint=1;
+}
 
+void SYS(TipoMKV *MKV, int opA, int TopA){
+    int i,k,dirfis,j,tam,dato,x;
+    char y;
+    int flag=0;
+    unsigned int cantDatos;
+    char c[100];
+    char bin[33];
+    dirfis=logifisi(*MKV,MKV->reg[EDX]);
+    int segmento=(MKV->reg[EDX] & MASC_LDH) >>16;
+    i=(MKV->reg[ECX] & MASC_LDH) >> 16; //tamanio por celda
+    cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
+    switch(opA){
+    
+    case 1:
+        SYS1(MKV,cantDatos,dirfis,segmento);
+        break;
+    case 2:
+        SYS2(MKV,cantDatos,dirfis,segmento);
+        break;
+    case 3: //STRING READ
+        SYS3(MKV,MKV->reg[ECX],dirfis,segmento);
+        break;
+    case 4: //STRING WRITE
+        SYS4(MKV,dirfis,segmento);
+        break;
+    case 7: //CLEAR SCREEN
+        SYS7();
+        break;
+    case 0xF: //BREAKPOINT
+        SYSF(MKV);
+        break;
+
+    } 
 }
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
@@ -363,7 +366,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
 
 void JNZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[0] && valor<=MKV->tabla_seg[0]+MKV->tabla_seg[1]){
+    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=valor;
     }

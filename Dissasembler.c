@@ -28,7 +28,6 @@ void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB
        *opB = (int)LopB;
 } 
 
-
 void devuelveRegistro(int registro){
    switch(registro){ 
     case 0x00:
@@ -286,6 +285,7 @@ void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB ){
         printf(" %02X ",MKV.mem[i]);
     }
 }
+
 void dissa(TipoMKV MKV){
     int dirfis,cod,opA,opB,TopA,TopB;
     unsigned char instruccion;

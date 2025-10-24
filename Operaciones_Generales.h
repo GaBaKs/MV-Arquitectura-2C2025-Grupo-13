@@ -33,3 +33,7 @@ void getOperandos(TipoMKV *MKV,unsigned char instruccion,int dirfis);
 int bintoint(char str[33]);
 
 void print_bin(int n);
+
+void cargaVMI(TipoMKV *MKV,char *nombre_arch);
+
+void generaVMI(TipoMKV MKV,char *nombre_arch);
