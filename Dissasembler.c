@@ -279,118 +279,173 @@ void imprimeTAB(char instruccion,int TopA,int TopB){
 }
 
 void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB ){
-
     int dirmax=dirfis+TopA+TopB+1;
     for (int i=dirfis;i<dirmax;i++){
         printf(" %02X ",MKV.mem[i]);
     }
 }
 
+void imprimehexa_Const(TipoMKV MKV,int dirfis,int *cant){
+    int dirmax=dirfis+6;
+    *cant=1;
+    while (MKV.mem[dirfis]!=0 && *cant<=6){
+        printf(" %02X ",MKV.mem[dirfis]);
+        dirfis++;
+        (*cant)++;
+    }
+    //printf("el cant es %d\n",*cant);
+    if (*cant==7){
+         printf(" .. ");
+    }
+    if (*cant<6)
+        printf(" %02X ",MKV.mem[dirfis]); //imprimo el 0 final
+    (*cant)++;
+}
+void imprimeTAB_Const(int cant){
+        for (int i=cant;i<=8;i++)
+            printf("    ");
+        printf(" | ");
+}
+
+void ImprimeKS(TipoMKV MKV){
+    int cant=0;
+    int dirfis;
+        dirfis=logifisi(MKV,MKV.reg[KS]);  
+        while ((dirfis<(MKV.tabla_seg[(MKV.reg[KS] & MASC_LDH) >>16][0]  +  MKV.tabla_seg[(MKV.reg[KS] & MASC_LDH) >>16][1]))){
+            printf(" [%04X]",dirfis);
+            imprimehexa_Const(MKV,dirfis,&cant);
+            imprimeTAB_Const(cant);
+            int i=0;
+            char palabra[200];
+            printf("\"");
+            while(MKV.mem[dirfis+i]!=0 && dirfis+i<=MKV.tabla_seg[KS][0]+MKV.tabla_seg[KS][1]){ 
+                if (MKV.mem[dirfis+i]>=32 && MKV.mem[dirfis+i]<=126){ //caracteres imprimibles
+                    palabra[i]=MKV.mem[dirfis+i];
+                }
+                else{
+                    palabra[i]='.';
+                }
+                i++;
+            }
+            palabra[i]='\0';
+            printf("%s\"\n",palabra);
+            dirfis+=i+1;
+        } 
+}
 void dissa(TipoMKV MKV){
     int dirfis,cod,opA,opB,TopA,TopB;
+    int dirfisEntrypoint;
     unsigned char instruccion;
-    dirfis=logifisi(MKV,MKV.reg[CS]);
-    instruccion=MKV.mem[dirfis];
-    while(dirfis<(MKV.tabla_seg[(MKV.reg[CS] & MASC_LDH) >>16][0]  +  MKV.tabla_seg[(MKV.reg[CS] & MASC_LDH) >>16][1])){ //cambiar condicion de corte
-        cod=instruccion & MASC_CODOP;
-        TopB=(instruccion & MASC_TOPB) >> 6; 
-        TopA=(instruccion & MASC_TOPA) >> 4; 
-        getOperandosDissa(MKV,instruccion,dirfis,&opA,&opB,TopA,TopB);
-        printf("[%04X]",dirfis);
-        imprimeOperandos(MKV,dirfis,TopA,TopB);
-        imprimeTAB(instruccion,TopA,TopB);
-        imprimeMnemonico(cod);
-        if (cod>=0x10 && cod<=0x1F){//dos operandos
-            if (TopA==3){
-                if ((opA&MASC_CODMEM)==0)
-                    printf("\t");
-                else
-                    if ((opA&MASC_CODMEM)==2)
-                        printf("\tw");
-                    else
-                        if ((opA&MASC_CODMEM)==3)                        
-                            printf("\tb");
-                if((opA&MASC_OFFSET)==0){
-                    printf("[");
-                    devuelveRegistro((opA&MASC_CODMEM)>>16);
-                    printf("],");
-                }    
-                else{
-                    printf("[");
-                    devuelveRegistro((opA&MASC_CODMEM)>>16);
-                    printf("+%d],",opA&MASC_OFFSET);
-                }            
-            }
-            else{
-                if (TopA==1){
-                    printf("\t");
-                    devuelveRegistro(opA);
-                    printf(",");
-                }
-            }        
-                
-            if (TopB==3){
-                if ((opB&MASC_CODMEM)==0)
-                    printf("");
-                else
-                    if ((opB&MASC_CODMEM)==2)
-                        printf("w");
-                    else
-                        if ((opB&MASC_CODMEM)==3)
-                            printf("b");
-                if ((opB&MASC_OFFSET)==0){
-                    printf("[");
-                    devuelveRegistro(((opB&MASC_CODMEM)>>16));
-                    printf("]");
-                }
-                else{
-                    printf("[");
-                    devuelveRegistro((opB&MASC_CODMEM)>>16);
-                    printf("+%d]",opB&MASC_OFFSET);
-                }
+    
+        if (MKV.reg[KS]!=-1)
+            ImprimeKS(MKV);
+        dirfis=logifisi(MKV,MKV.reg[CS]);
+        instruccion=MKV.mem[dirfis];
+        dirfisEntrypoint=logifisi(MKV,MKV.reg[IP]);
+        while(dirfis<(MKV.tabla_seg[(MKV.reg[CS] & MASC_LDH) >>16][0]  +  MKV.tabla_seg[(MKV.reg[CS] & MASC_LDH) >>16][1])){ 
+            cod=instruccion & MASC_CODOP;
+            TopB=(instruccion & MASC_TOPB) >> 6; 
+            TopA=(instruccion & MASC_TOPA) >> 4; 
+            getOperandosDissa(MKV,instruccion,dirfis,&opA,&opB,TopA,TopB);
+            if (dirfis==dirfisEntrypoint){
+                printf(">[%04X]",dirfis);  
             }
             else
-                if (TopB==2){
-                    printf(" %d",opB);
-                }      
-                else{
-                    //printf("\t ");
-                    devuelveRegistro(opB);    
-                } 
-        }
-        else{//de un operando
-            switch (TopB){
-            case 3:
-                if ((opA&MASC_CODMEM)==0)
-                    printf("\t");
-                else
-                    if ((opA&MASC_CODMEM)==2)
-                        printf("\tw");
+                printf(" [%04X]",dirfis);
+            
+            imprimeOperandos(MKV,dirfis,TopA,TopB);
+            imprimeTAB(instruccion,TopA,TopB);
+            imprimeMnemonico(cod);
+            if (cod>=0x10 && cod<=0x1F){//dos operandos
+                if (TopA==3){
+                    if ((opA&MASC_CODMEM)==0)
+                        printf("\t");
                     else
-                        if ((opA&MASC_CODMEM)==3)                        
-                            printf("\tb");                
-                if ((opA&MASC_OFFSET)==0){
-                    printf("[");
-                    devuelveRegistro((opA&MASC_CODMEM)>>16);
-                    printf("]");
-                    
-                }     
+                        if ((opA&MASC_CODMEM)==2)
+                            printf("\tw");
+                        else
+                            if ((opA&MASC_CODMEM)==3)                        
+                                printf("\tb");
+                    if((opA&MASC_OFFSET)==0){
+                        printf("[");
+                        devuelveRegistro((opA&MASC_CODMEM)>>16);
+                        printf("],");
+                    }    
+                    else{
+                        printf("[");
+                        devuelveRegistro((opA&MASC_CODMEM)>>16);
+                        printf("+%d],",opA&MASC_OFFSET);
+                    }            
+                }
                 else{
-                    printf("[");
-                    devuelveRegistro((opA&MASC_CODMEM)>>16);
-                    printf("+%d]",opA&MASC_OFFSET);
-                }     
-                break;
-            case 2:
-                printf("\t%d",opA);   
-                break;
-            case 1:
-                printf("\t");
-                devuelveRegistro(opA);    
-                break;                
+                    if (TopA==1){
+                        printf("\t");
+                        devuelveRegistro(opA);
+                        printf(",");
+                    }
+                }        
+                    
+                if (TopB==3){
+                    if ((opB&MASC_CODMEM)==0)
+                        printf("");
+                    else
+                        if ((opB&MASC_CODMEM)==2)
+                            printf("w");
+                        else
+                            if ((opB&MASC_CODMEM)==3)
+                                printf("b");
+                    if ((opB&MASC_OFFSET)==0){
+                        printf("[");
+                        devuelveRegistro(((opB&MASC_CODMEM)>>16));
+                        printf("]");
+                    }
+                    else{
+                        printf("[");
+                        devuelveRegistro((opB&MASC_CODMEM)>>16);
+                        printf("+%d]",opB&MASC_OFFSET);
+                    }
+                }
+                else
+                    if (TopB==2){
+                        printf(" %d",opB);
+                    }      
+                    else{
+                        //printf("\t ");
+                        devuelveRegistro(opB);    
+                    } 
             }
-
-            }
+            else{//de un operando
+                switch (TopB){
+                case 3:
+                    if ((opA&MASC_CODMEM)==0)
+                        printf("\t");
+                    else
+                        if ((opA&MASC_CODMEM)==2)
+                            printf("\tw");
+                        else
+                            if ((opA&MASC_CODMEM)==3)                        
+                                printf("\tb");                
+                    if ((opA&MASC_OFFSET)==0){
+                        printf("[");
+                        devuelveRegistro((opA&MASC_CODMEM)>>16);
+                        printf("]");
+                        
+                    }     
+                    else{
+                        printf("[");
+                        devuelveRegistro((opA&MASC_CODMEM)>>16);
+                        printf("+%d]",opA&MASC_OFFSET);
+                    }     
+                    break;
+                case 2:
+                    printf("\t%d",opA);   
+                    break;
+                case 1:
+                    printf("\t");
+                    devuelveRegistro(opA);    
+                    break;                
+                }
+        }
         printf(" \n");
         dirfis+=TopA+TopB+1;
         instruccion=MKV.mem[dirfis];

@@ -11,6 +11,12 @@ int nuevadirfis(int dirfis,int TopA,int TopB);
 
 void imprimeOperandos(TipoMKV MKV,int dirfis, int TopA,int TopB );
 
+void imprimehexa_Const(TipoMKV MKV,int dirfis,int *cant);
+
+void ImprimeKS(TipoMKV MKV);
+
 void imprimeTAB(char instruccion,int TopA,int TopB);
+
+void imprimeTAB_Const(int cant);
 
 void dissa(TipoMKV MKV);
