@@ -384,8 +384,13 @@ void dissa(TipoMKV MKV){
             case 2:
                 printf("\t%d",opA);   
                 break;
+            case 1:
+                printf("\t");
+                devuelveRegistro(opA);    
+                break;                
             }
-        }
+
+            }
         printf(" \n");
         dirfis+=TopA+TopB+1;
         instruccion=MKV.mem[dirfis];

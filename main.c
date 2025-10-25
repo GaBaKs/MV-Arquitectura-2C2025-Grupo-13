@@ -40,6 +40,7 @@ int main(int argc, char *argv[]){
     ejecucion(&MKV,nombreVMI);
     return 1;
 }
+
 void inicializa_tablaseg_en_cero(TipoMKV *MKV){
     for (int i=0;i<8;i++){
         MKV->tabla_seg[i][0]=0;
@@ -54,7 +55,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
     int desp=0;
     int tamPS;
     int argc2;
-    int aux;
+    int aux=0;
     int version=0;
     unsigned char cabecera[5];
     arch= fopen(nombre_arch, "rb");
@@ -74,10 +75,11 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
                 MKV->tabla_seg[1][0]=MKV->tabla_seg[0][1];                            //base DS
                 MKV->tabla_seg[1][1]=MKV->tamanoRAM-MKV->tabla_seg[1][0];                      //tamano max DS   
                 while (fread(&MKV->mem[desp], sizeof(unsigned char), 1, arch) == 1){  //Guarda las instrucciones en el code segment
-                    desp++;
-                    printf("uwu");                    
+                    desp++;                 
                 }
-                
+                MKV->reg[CS]=0;
+                MKV->reg[DS]=0x00010000;
+                MKV->reg[IP]=0;
                 printf("Lectura de archivo realizada correctamente para la version 1\n");
                 fclose(arch);
             }
@@ -95,26 +97,37 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
                     MKV->reg[PS]=-1;
                     unsigned short vectoraux[6];
                     inicia_Memoria(argc,argv,MKV);
+                    
                     cargaPS(MKV,argc,argv,&tamPS,&argc2);
                     vectoraux[5]=tamPS;
+                    unsigned char parte1,parte2;
                     for(int j=0;j<5;j++){
-                        fread(&vectoraux[j],sizeof(short),1,arch);
+                        fread(&parte1,sizeof(unsigned char),1,arch);
+                        fread(&parte2,sizeof(unsigned char),1,arch);
+                        vectoraux[j]=(unsigned short)parte1;
+                        vectoraux[j]<<=8;
+                        vectoraux[j]+=(unsigned short)(parte2);
                     }
+                    
                     creotablaseg(MKV,vectoraux);
+                    printf("VALOR DE PS: %x DS: %x ES: %x SS: %x KS: %x CS: %x \n",MKV->reg[PS],MKV->reg[DS],MKV->reg[ES],MKV->reg[SS],MKV->reg[KS],MKV->reg[CS]);
                     if (!MKV->flag){
                         MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
-                        fread(&aux,sizeof(unsigned char),1,arch);
+                        fread(&aux,sizeof(unsigned short),1,arch);
                         MKV->reg[IP]=MKV->reg[CS]+aux;
                         inicia_SS(MKV,argc2);
                         while ( desp != MKV->tabla_seg[(MKV->reg[CS]&MASC_LDH)>>16][1]){  //Guarda las instrucciones en el code segment
                             fread(&MKV->mem[MKV->tabla_seg[(MKV->reg[CS]&MASC_LDH)>>16][0]+desp], sizeof(char), 1, arch);
                             desp++;                    
+                              
                         }
                         desp=0;
-                        while(desp != MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][1]){  //Guarda las instrucciones en el code segment
-                            fread(&MKV->mem[MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][0]+desp], sizeof(char), 1, arch);  //Guarda las instrucciones en el code segment
-                            desp++;                    
-                        }
+                        if (MKV->reg[KS]!=-1)
+                            while(desp != MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][1]){  //Guarda las instrucciones en el Const segment
+                                fread(&MKV->mem[MKV->tabla_seg[(MKV->reg[KS]&MASC_LDH)>>16][0]+desp], sizeof(char), 1, arch);  
+                                desp++;                    
+                            }
+                    printf("Lectura de archivo realizada correctamente para la version 2\n");
                     fclose(arch);
                     }
                 }
@@ -128,7 +141,6 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
         }
            
 }
-
 
 void creotablaseg(TipoMKV *MKV,short vectoraux[]){
     int contseg=0;
@@ -182,7 +194,7 @@ void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2){
         while (i<argc){
             int largo=strlen(argv[i]);
             argv2[*argc2]=aux;       //aux va a ir contando el inicio de cada palabra, osea que calcula el offset
-            *argc2++;
+            (*argc2)++;
             for (int k=0;k<=largo;k++){
                 MKV->mem[aux]=argv[i][k]; // guardo char a char las palabras con el nulo
                 aux++;
@@ -289,8 +301,8 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     MKV->breakpoint=0;
     void (*Fops2[16])(TipoMKV *, int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
     void (*Fops1[12])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, PUSH, POP, CALL};
-    while ( MKV->reg[IP]!=-1 && !MKV->flag && MKV->reg[IP]<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
-        dirfis=logifisi(*MKV ,MKV->reg[IP]);
+    dirfis=logifisi(*MKV ,MKV->reg[IP]);
+    while ( MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria 
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
                 verificaerrores(MKV,1);
@@ -336,5 +348,6 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
             else
                 MKV->breakpoint=0;
         }
+        dirfis=logifisi(*MKV ,MKV->reg[IP]);
     }     
 }

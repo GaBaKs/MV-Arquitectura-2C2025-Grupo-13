@@ -36,9 +36,9 @@ void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB);
 
 void SYS(TipoMKV *MKV, int opA, int TopA);
 
-void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento);
+void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento,int i);
 
-void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento);
+void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento, int i);
 
 void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis, int segmento);
 

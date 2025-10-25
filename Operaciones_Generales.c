@@ -37,7 +37,7 @@ void verificaerrores(TipoMKV *MKV, int codigo_error){
 int logifisi(TipoMKV MKV,int dirlog){
     int dirfis,segmento,offset,base;
     segmento=(dirlog & 0x000F0000)>>16; 
-    offset=dirlog & 0x0000FFFF;
+    offset=(dirlog & 0x0000FFFF);
     dirfis = MKV.tabla_seg[segmento][0]+offset;
     if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
         return dirfis;
@@ -387,9 +387,8 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
                     MKV->reg[MAR]= 0x00010000+auxL;        
     }
         
-    else{
-        verificaerrores(MKV,3);
-    }
+    else
+        verificaerrores(MKV,3); 
                      // Error de segmento
 }
 
@@ -410,14 +409,13 @@ void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la di
     int dirfis,valor=MKV->reg[MBR];
     dirfis=MKV->reg[MAR] & MASC_MARL;
     int cantceldas=(MKV->reg[MAR] & MASC_LDH) >> 16;
-    dirfis+=4-cantceldas;
     segmento=(MKV->reg[LAR] & 0x000F0000)>>16;
-    if (dirfis+cantceldas<=MKV->tamanoRAM && dirfis>=MKV->tabla_seg[segmento][1])
+    if (dirfis+cantceldas<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1])
         for (int i=cantceldas;i>0;i--){ 
             MKV->mem[dirfis++]=(char)(valor >> (((i-1)*8)) & 0x000000FF) ; 
         }
-    else{ 
+    else 
         verificaerrores(MKV,3); //fallo de segmento
-    }  
+     
 }
 

@@ -48,6 +48,7 @@ void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     valorA = getValor(MKV,opA,TopA);
+    valorA *= valorB;
     setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
 }
@@ -166,8 +167,8 @@ void RND (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     setValor(MKV,opA,TopA,valorA);
 }
 
-void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento){
-    int flag=0,j,i,dato;
+void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento, int i){
+    int flag=0,j,dato;
     char c[100];
     char bin[33];
     //verifico que formato tengo que leer
@@ -204,14 +205,14 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento){
             }
                 
         }        
-        else{
+        else
             verificaerrores(MKV,3); //error de segmento
-        }
+        
     }
 }
 
-void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento){
-    int i,j,x,y,k;
+void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento,int i){
+    int j,x,y,k;
     if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+i<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
         for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
             x = 0;
@@ -265,8 +266,10 @@ void SYS3 (TipoMKV *MKV,int cantDatos, int dirfis, int segmento){
         if (i<lengo && i>=cantDatos)
             MKV->mem[dirfis+i]=0; //agrego el \0 al fina, en este caso se trunca la cadena por ser mas larga que el espacio reservado
     } 
-    else
+    else{
         verificaerrores(MKV,3); //error de segmento
+    }
+        
 }
 
 void SYS4 (TipoMKV *MKV,int dirfis, int segmento){
@@ -275,9 +278,9 @@ void SYS4 (TipoMKV *MKV,int dirfis, int segmento){
         printf("%c",MKV->mem[dirfis+i]);
         i++;
     }
-    if (dirfis+i>MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
+    if (dirfis+i>MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1])
         verificaerrores(MKV,3);
-    }
+    
 }
 
 void SYS7 (){
@@ -296,16 +299,15 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
     char c[100];
     char bin[33];
     dirfis=logifisi(*MKV,MKV->reg[EDX]);
-    int segmento=(MKV->reg[EDX] & MASC_LDH) >>16;
+    int segmento=((MKV->reg[EDX] & MASC_LDH) >>16);
     i=(MKV->reg[ECX] & MASC_LDH) >> 16; //tamanio por celda
     cantDatos=MKV->reg[ECX] & MASC_LDL;  //cant celdas (cant datos)
     switch(opA){
-    
     case 1:
-        SYS1(MKV,cantDatos,dirfis,segmento);
+        SYS1(MKV,cantDatos,dirfis,segmento,i);
         break;
     case 2:
-        SYS2(MKV,cantDatos,dirfis,segmento);
+        SYS2(MKV,cantDatos,dirfis,segmento,i);
         break;
     case 3: //STRING READ
         SYS3(MKV,MKV->reg[ECX],dirfis,segmento);
@@ -319,7 +321,6 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
     case 0xF: //BREAKPOINT
         SYSF(MKV);
         break;
-
     } 
 }
 
@@ -405,7 +406,7 @@ void NOT(TipoMKV *MKV, int opA, int TopA){
 void PUSH(TipoMKV *MKV, int opA, int TopA){
     int valorA;
     MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
-    if (MKV->reg[SP]<MKV->reg[SS]){
+    if (MKV->reg[SP]>MKV->reg[SS]){
         valorA=getValor(MKV,opA,TopA);
         int dirfis=logifisi(*MKV,MKV->reg[SP]);
         for (int i=CANTCELDAS;i>0;i--){ 

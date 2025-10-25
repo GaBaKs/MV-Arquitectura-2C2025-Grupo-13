@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "operaciones_generales.h": "c"
+        "operaciones_generales.h": "c",
+        "stdlib.h": "c"
     }
 }
