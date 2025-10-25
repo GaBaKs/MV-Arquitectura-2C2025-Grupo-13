@@ -441,6 +441,7 @@ void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes d
 
 void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
     POP(MKV,IP,1);
+    printf("RET a la direccion %04X\n", MKV->reg[IP]);
 }
 
 

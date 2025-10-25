@@ -34,7 +34,7 @@ int main(int argc, char *argv[]){
     while (j<argc && (strcmp(argv[j],"-d")==0))
         j++;
     if (j<argc){
-         dissa(MKV);
+        // dissa(MKV);
          printf("\n");
     }
     ejecucion(&MKV,nombreVMI);
@@ -302,7 +302,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     void (*Fops2[16])(TipoMKV *, int, int, int, int )={MOV , ADD , SUB , MUL , DIV , CMP , SHL , SHR , SAR , AND , OR , XOR , SWAP , LDL , LDH , RND};
     void (*Fops1[12])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, PUSH, POP, CALL};
     dirfis=logifisi(*MKV ,MKV->reg[IP]);
-    while ( MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria 
+    while ( dirfis!= -1 && MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
                 verificaerrores(MKV,1);
@@ -329,6 +329,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                                 if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
                                     TopA=(instruccion & MASC_TOPB) >> 6;
                                     cambioip(MKV,TopA,0);
+                                    printf("valor de ip CAMBIADO: %x",MKV->reg[IP]);
                                     Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
                                 } 
                     }
@@ -348,6 +349,8 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
             else
                 MKV->breakpoint=0;
         }
+        printf("valor de ip CAMBIADO2: %x",MKV->reg[IP]);
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
-    }     
+    }
+    printf("NO CRASHEA");     
 }
