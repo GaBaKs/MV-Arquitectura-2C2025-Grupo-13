@@ -336,7 +336,6 @@ void dissa(TipoMKV MKV){
     int dirfis,cod,opA,opB,TopA,TopB;
     int dirfisEntrypoint;
     unsigned char instruccion;
-    
         if (MKV.reg[KS]!=-1)
             ImprimeKS(MKV);
         dirfis=logifisi(MKV,MKV.reg[CS]);

@@ -289,6 +289,7 @@ void SYS7 (){
 
 void SYSF (TipoMKV *MKV){
     MKV->breakpoint=1;
+    printf("\n\n\nDASDASA\n\n\n");
 }
 
 void SYS(TipoMKV *MKV, int opA, int TopA){
@@ -419,7 +420,7 @@ void PUSH(TipoMKV *MKV, int opA, int TopA){
 
 void POP(TipoMKV *MKV,int opA,int TopA){
     int valor,aux;
-    if (MKV->reg[SP]+4<=MKV->reg[SS]+MKV->tabla_seg[MKV->reg[SS]&MASC_LDH][1]){
+    if (MKV->reg[SP]+4<=(MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS]&MASC_LDH )>> 16][1])){
         int dirfis=logifisi(*MKV,MKV->reg[SP]);
      for (int i=0;i<4;i++){
         valor<<=8;
@@ -441,7 +442,7 @@ void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes d
 
 void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
     POP(MKV,IP,1);
-    printf("RET a la direccion %04X\n", MKV->reg[IP]);
+    printf("HIZO RET A LA DIRECCION %x",MKV->reg[IP]);
 }
 
 
