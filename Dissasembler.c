@@ -197,7 +197,7 @@ void imprimeMnemonico(unsigned char cod){
             printf("CALL ");
             break;
         case 0x0E:
-            printf("RET ");
+            printf("RET \n");
             break;
         case 0x10: 
             printf("MOV ");

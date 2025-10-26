@@ -49,31 +49,6 @@ int logifisi(TipoMKV MKV,int dirlog){
         return -1;
 }
 
-
-/*
-int logifisi(TipoMKV MKV,int dirlog){ 
-    int dirfis,segmento,offset;
-    segmento=(dirlog & 0x00010000)>>16; 
-    offset=dirlog & 0x0000FFFF;
-        if (segmento==0){ //Segmento de codigo 
-            dirfis=MKV.tabla_seg[0]+offset;//Direccion fisica = base CS + direccion logica
-            if (dirfis>=MKV.tabla_seg[0] && dirfis<=MKV.tabla_seg[2]) //Verifica que la direccion fisica este dentro del segmento de codigo    
-                return dirfis;
-            else
-                return -1;
-        }
-        else{
-            dirfis=MKV.tabla_seg[2]+offset; //Direccion fisica = base DS + direccion logica
-            if (dirfis>=0 && dirfis<=MEMORIA) //Verifica que la direccion logica este dentro del segmento de datos       
-                return dirfis;
-            else
-                return -1;
-        }
-}
-*/
-
-
-
 void cambioip(TipoMKV *MKV,int TopA,int TopB){
     int suma=1;
         if (TopA==0b01)
@@ -153,20 +128,27 @@ void cargaVMI(TipoMKV *MKV,char *nombre_arch){
     if (arch!=NULL){
         for (int j=0;j<6;j++){
             fread(&cabecera[j], sizeof(unsigned char), 1, arch);
+            printf("cabecera en %d es %c\n\n",j,cabecera[j]);
         }
          //VMI25 1
+         alto=0;
+         bajo=0;
+         aux=0;
         fread(&alto,sizeof(unsigned char),1,arch);
         fread(&bajo,sizeof(unsigned char),1,arch);
-        MKV->tamanoRAM=((alto<<8)+bajo)*1024; // paso a bytes
+        printf("ALTO: %x BAJO %x",alto,bajo);
+        alto=alto<<8;
+        MKV->tamanoRAM=(alto+bajo)*1024; // paso a bytes
+        
         MKV->mem = (unsigned char*)malloc((MKV->tamanoRAM) * sizeof(unsigned char));    //inicializacion de la memoria RAM
 
         for(int j=0;j<32;j++){ //Este ciclo arma los registros leyendo byte a byte los 4 bytes de cada registro
             fread(&aux,sizeof(unsigned char),1,arch);
-            MKV->reg[j]=aux<<24;
+            MKV->reg[j]=(aux<<24);
             fread(&aux,sizeof(unsigned char),1,arch);
-            MKV->reg[j]+=aux<<16;
+            MKV->reg[j]+=(aux<<16);
             fread(&aux,sizeof(unsigned char),1,arch);
-            MKV->reg[j]+=aux<<8;
+            MKV->reg[j]+=(aux<<8);
             fread(&aux,sizeof(unsigned char),1,arch);
             MKV->reg[j]+=aux;
         }
@@ -230,7 +212,6 @@ void generaVMI(TipoMKV MKV,char *nombre_arch){ //agregar al .h
         dato=bajo;
         fwrite(&dato,sizeof(unsigned char),1,arch);
         //Fin de la carga del header
-
         for(int j=0;j<32;j++){ //Este ciclo arma los registros escribo byte a byte los 4 bytes de cada registro
             dato=((MKV).reg[j]&0xFF000000)>>24;//dato es char entonces no me preocupo por los bits de mas
             fwrite(&dato,sizeof(char),1,arch);
@@ -342,7 +323,7 @@ int getRegistro(TipoMKV MKV, int opA){
     
 }
 
-void setRegistro(TipoMKV *MKV,int opA,int valorB){      //guarda un valorB de 4 bytes en un registro
+void setRegistro(TipoMKV *MKV,int opA,int valorB){      //guarda un valorB en un registro
     int reg=opA & 0x0000001F;
     int tipo= (opA & MASC_SECREG) >> 6;
     switch(tipo){
@@ -352,7 +333,8 @@ void setRegistro(TipoMKV *MKV,int opA,int valorB){      //guarda un valorB de 4 
             break;
         case 2: MKV->reg[reg]=(MKV->reg[reg] & 0xFFFF00FF) + (valorB & MASC_AL)<<8;
             break;
-        case 3:  MKV->reg[reg]=MKV->reg[reg] & MASC_LDH + valorB & MASC_AX;
+        case 3:  MKV->reg[reg]=(MKV->reg[reg] & MASC_LDH) + (valorB & MASC_AX);
+        printf("entro caso 3");
             break;
     }
 }

@@ -1,3 +1,3 @@
 gcc *.c -o programa
-.\programa.exe test2.vmx m=16384 -d -p asd asd as
+.\programa.exe testeovmi.vmx testeovmi.vmi-d m=16384
 pause

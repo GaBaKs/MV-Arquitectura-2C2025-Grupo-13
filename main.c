@@ -353,7 +353,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
         if (!MKV->flag && MKV->breakpoint){       // encontro un breakpoint
             char quehago;
             if(strcmp(nombreVMI,"?")!=0){
-                printf("\n\nBREACKPOINT\n\n");
+                printf("\nBREAKPOINT\n");
                 generaVMI(*MKV,nombreVMI);
                 scanf("%c",&quehago);
                 switch(quehago){
@@ -371,5 +371,5 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
         dirfis=logifisi(*MKV ,MKV->reg[IP]);
         
     }
-    printf("FIN de ejecucion IP: %x dirfis: %X",MKV->reg[IP],dirfis);     
+    printf("\nFIN de ejecucion IP: %x dirfis: %X",MKV->reg[IP],dirfis);     
 }

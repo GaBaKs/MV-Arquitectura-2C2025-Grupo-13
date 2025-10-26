@@ -213,6 +213,7 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento, int i){
 
 void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento,int i){
     int j,x,y,k;
+    
     if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+i<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
         for(j=0;j<cantDatos;j++){ //CANTIDAD DATOS A LEER
             x = 0;
@@ -289,7 +290,6 @@ void SYS7 (){
 
 void SYSF (TipoMKV *MKV){
     MKV->breakpoint=1;
-    printf("\n\n\nDASDASA\n\n\n");
 }
 
 void SYS(TipoMKV *MKV, int opA, int TopA){
