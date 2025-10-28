@@ -328,7 +328,7 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
 void JMP(TipoMKV *MKV, int opA, int TopA){
    int valor=getValor(MKV,opA,TopA);
    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
-        MKV->reg[IP]=valor;
+        MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
     else
         verificaerrores(MKV,3); //fallo de segmento
@@ -338,7 +338,7 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == MASC_Z){
-            MKV->reg[IP]=valor;
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
         }
     }
     else
@@ -349,8 +349,8 @@ void JP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0){
-            MKV->reg[IP]=valor;
-        }
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
+                }
     }
     else
          verificaerrores(MKV,3); //fallo de segmento
@@ -360,7 +360,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == 0)
-            MKV->reg[IP]=valor;
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
     else
          verificaerrores(MKV,3); //fallo de segmento
@@ -370,7 +370,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == 0)
-            MKV->reg[IP]=valor;
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
     else
          verificaerrores(MKV,3); //fallo de segmento
@@ -380,7 +380,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N || (MKV->reg[CC]&MASC_Z) == MASC_Z)
-            MKV->reg[IP]=valor;
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
     else
          verificaerrores(MKV,3); //fallo de segmento
@@ -390,7 +390,7 @@ void JNN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
     if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0)
-            MKV->reg[IP]=valor;
+            MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
     else
          verificaerrores(MKV,3); //fallo de segmento
@@ -442,7 +442,6 @@ void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes d
 
 void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
     POP(MKV,IP,1);
-    printf("HIZO RET A LA DIRECCION %x",MKV->reg[IP]);
 }
 
 

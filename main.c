@@ -118,10 +118,11 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
                     printf("VALOR DE PS: %x DS: %x ES: %x SS: %x KS: %x CS: %x \n",MKV->reg[PS],MKV->reg[DS],MKV->reg[ES],MKV->reg[SS],MKV->reg[KS],MKV->reg[CS]);
                     if (!MKV->flag){
                         MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
-                        char aux2;
+                        int aux2=0;
                         fread(&aux,sizeof(unsigned char),1,arch);
                         fread(&aux2,sizeof(unsigned char),1,arch);
                         aux=aux <<8;
+                     
                         aux+=aux2;
                         MKV->reg[IP]=MKV->reg[CS]+aux;
                         inicia_SS(MKV,argc2);
@@ -312,12 +313,16 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     void (*Fops1[14])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, error, error, PUSH, POP, CALL};
     dirfis=logifisi(*MKV ,MKV->reg[IP]);
     int numins=1;
+    /* print de toda la tabla de segmentos:
+    for (int i=0;i<8;i++){
+        printf("val de i: %d base: %d tam: %d\n",i,MKV->tabla_seg[i][0],MKV->tabla_seg[i][1]);
+    }
+    */
     while ( dirfis!= -1 && MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
         
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
 
-                printf("das\n\n\nasd %d instruccion & MASC_CODOP",instruccion & MASC_CODOP);
                 verificaerrores(MKV,1);
             }
             else{
@@ -333,8 +338,6 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                             TopA=(instruccion & MASC_TOPA) >> 4;
                             TopB=(instruccion & MASC_TOPB) >> 6;
                             cambioip(MKV,TopA,TopB);
-                                    imprimeMnemonico(instruccion & MASC_CODOP);
-                                    printf("OPERANDO A: %x OPERANDO B: %x\n",MKV->reg[OPA],MKV->reg[OPB]);
                             Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                         }
                         else
@@ -344,8 +347,6 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                                 if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
                                     TopA=(instruccion & MASC_TOPB) >> 6;
                                     cambioip(MKV,TopA,0);
-                                    imprimeMnemonico(instruccion & MASC_CODOP);
-                                    printf("OPERANDO A: %x\n",MKV->reg[OPA]);
                                     Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
                                 } 
                     }
@@ -353,7 +354,6 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
         if (!MKV->flag && MKV->breakpoint){       // encontro un breakpoint
             char quehago;
             if(strcmp(nombreVMI,"?")!=0){
-                printf("\nBREAKPOINT\n");
                 generaVMI(*MKV,nombreVMI);
                 scanf("%c",&quehago);
                 switch(quehago){

@@ -335,6 +335,7 @@ void ImprimeKS(TipoMKV MKV){
 void dissa(TipoMKV MKV){
     int dirfis,cod,opA,opB,TopA,TopB;
     int dirfisEntrypoint;
+    int flag=1;
     unsigned char instruccion;
         if (MKV.reg[KS]!=-1)
             ImprimeKS(MKV);
@@ -346,7 +347,7 @@ void dissa(TipoMKV MKV){
             TopB=(instruccion & MASC_TOPB) >> 6; 
             TopA=(instruccion & MASC_TOPA) >> 4; 
             getOperandosDissa(MKV,instruccion,dirfis,&opA,&opB,TopA,TopB);
-            if (dirfis==dirfisEntrypoint){
+            if (dirfis==dirfisEntrypoint){ //00 FF FF FF
                 printf(">[%04X]",dirfis);  
             }
             else
@@ -357,90 +358,156 @@ void dissa(TipoMKV MKV){
             imprimeMnemonico(cod);
             if (cod>=0x10 && cod<=0x1F){//dos operandos
                 if (TopA==3){
-                    if ((opA&MASC_CODMEM)==0)
-                        printf("\t");
+                    if ((opA&MASC_DTAMCEL)==0)
+                        printf(" ");
                     else
-                        if ((opA&MASC_CODMEM)==2)
-                            printf("\tw");
+                    {
+                        if (((opA&MASC_DTAMCEL)>>22)==2)
+                            printf("w");
                         else
-                            if ((opA&MASC_CODMEM)==3)                        
-                                printf("\tb");
-                    if((opA&MASC_OFFSET)==0){
-                        printf("[");
-                        devuelveRegistro((opA&MASC_CODMEM)>>16);
-                        printf("],");
-                    }    
-                    else{
-                        printf("[");
-                        devuelveRegistro((opA&MASC_CODMEM)>>16);
-                        printf("+%d],",opA&MASC_OFFSET);
-                    }            
+                            if (((opA&MASC_DTAMCEL)>>22)==3)                        
+                                printf("b");
+                        flag=0;
+                    }
+                    if (flag)
+                        if((opA&MASC_OFFSET)==0){
+                            printf("[");
+                            devuelveRegistro((opA&MASC_CODMEM)>>16);
+                            printf("],");
+                        }    
+                        else{
+                            printf("[");
+                            devuelveRegistro((opA&MASC_CODMEM)>>16);
+                            if (escopeta2bytes(opA&MASC_OFFSET)>0)
+                                printf("+%d],",escopeta2bytes(opA&MASC_OFFSET));
+                            else
+                                printf("%d],",escopeta2bytes(opA&MASC_OFFSET));
+                        }   
+                    else
+                        if ((opA&MASC_OFFSET)==0 ){
+                            printf("[");
+                            devuelveRegistro(((opA&0x1F0000)>>16));
+                            printf("],");
+                        }
+                        else{
+                            printf("[");
+                            devuelveRegistro((opA&0x1F0000)>>16);
+                            if (escopeta2bytes(opA&MASC_OFFSET)>0)
+                                printf("+%d],",escopeta2bytes(opA&MASC_OFFSET));
+                            else
+                                printf("%d],",escopeta2bytes(opA&MASC_OFFSET));
+                        }                               
                 }
                 else{
                     if (TopA==1){
-                        printf("\t");
+                        printf("\t ");
                         devuelveRegistro(opA);
                         printf(",");
                     }
                 }        
-                    
+                flag=1;
                 if (TopB==3){
-                    if ((opB&MASC_CODMEM)==0)
+                    if ((opB&MASC_DTAMCEL)==0)
                         printf("");
                     else
-                        if ((opB&MASC_CODMEM)==2)
-                            printf("w");
+                    {
+                        if (((opB&MASC_DTAMCEL)>>22)==2)
+                            printf(" w");
                         else
-                            if ((opB&MASC_CODMEM)==3)
-                                printf("b");
-                    if ((opB&MASC_OFFSET)==0){
-                        printf("[");
-                        devuelveRegistro(((opB&MASC_CODMEM)>>16));
-                        printf("]");
+                            if (((opB&MASC_DTAMCEL)>>22)==3)
+                                printf(" b");
+                        flag=0;                 
+
                     }
-                    else{
-                        printf("[");
-                        devuelveRegistro((opB&MASC_CODMEM)>>16);
-                        printf("+%d]",opB&MASC_OFFSET);
-                    }
+                    if (flag)
+                        if ((opB&MASC_OFFSET)==0 ){
+                            printf(" [");
+                            devuelveRegistro(((opB&MASC_CODMEM)>>16));
+                            printf("]");
+                        }
+                        else{
+                            printf(" [");
+                            devuelveRegistro((opB&MASC_CODMEM)>>16);
+                            if (escopeta2bytes(opB&MASC_OFFSET)>0)
+                                printf("+%d]",escopeta2bytes(opB&MASC_OFFSET));
+                            else
+                                printf("%d]",escopeta2bytes(opB&MASC_OFFSET));
+                        }
+                    else
+                        if ((opB&MASC_OFFSET)==0 ){
+                            printf("[");
+                            devuelveRegistro(((opB&0x1F0000)>>16));
+                            printf("]");
+                        }
+                        else{
+                            printf("[");
+                            devuelveRegistro((opB&0x1F0000)>>16);
+                            if (escopeta2bytes(opB&MASC_OFFSET)>0)
+                                printf("+%d]",escopeta2bytes(opB&MASC_OFFSET));
+                            else
+                                printf("%d]",escopeta2bytes(opB&MASC_OFFSET));
+                        }                        
+
                 }
                 else
                     if (TopB==2){
                         printf(" %d",opB);
                     }      
                     else{
-                        //printf("\t ");
+                        printf(" ");
                         devuelveRegistro(opB);    
                     } 
             }
             else{//de un operando
+                flag=1;
                 switch (TopB){
                 case 3:
-                    if ((opA&MASC_CODMEM)==0)
-                        printf("\t");
+                    if ((opA&MASC_DTAMCEL)==0)
+                        printf("");
                     else
-                        if ((opA&MASC_CODMEM)==2)
-                            printf("\tw");
+                    {
+                        if (((opA&MASC_DTAMCEL)>>22)==2)
+                            printf("w");
                         else
-                            if ((opA&MASC_CODMEM)==3)                        
-                                printf("\tb");                
-                    if ((opA&MASC_OFFSET)==0){
-                        printf("[");
-                        devuelveRegistro((opA&MASC_CODMEM)>>16);
-                        printf("]");
-                        
-                    }     
-                    else{
-                        printf("[");
-                        devuelveRegistro((opA&MASC_CODMEM)>>16);
-                        printf("+%d]",opA&MASC_OFFSET);
-                    }     
+                            if (((opA&MASC_DTAMCEL)>>22)==3)                        
+                                printf("b");
+                        flag=0;
+                    }
+                    if (flag)            
+                        if ((opA&MASC_OFFSET)==0){
+                            printf(" [");
+                            devuelveRegistro((opA&MASC_CODMEM)>>16);
+                            printf("]");
+                            
+                        }     
+                        else{
+                            printf(" [");
+                            devuelveRegistro((opA&MASC_CODMEM)>>16);
+                            if (escopeta2bytes(opA&MASC_OFFSET)>0)
+                                printf("+%d],",escopeta2bytes(opA&MASC_OFFSET));
+                            else
+                                printf("%d],",escopeta2bytes(opA&MASC_OFFSET));
+                        }     
+                    else
+                        if ((opA&MASC_OFFSET)==0 ){
+                            printf("[");
+                            devuelveRegistro(((opA&0x1F0000)>>16));
+                            printf("]");
+                        }
+                        else{
+                            printf("[");
+                            devuelveRegistro((opA&0x1F0000)>>16);
+                            if (escopeta2bytes(opA&MASC_OFFSET)>0)
+                                printf("+%d],",escopeta2bytes(opA&MASC_OFFSET));
+                            else
+                                printf("%d],",escopeta2bytes(opA&MASC_OFFSET));
+                        }                       
                     break;
                 case 2:
-                    printf("\t%d",opA);   
+                    printf("\t  %d",opA);   
                     break;
                 case 1:
-                    printf("\t");
+                    printf("\t ");
                     devuelveRegistro(opA);    
                     break;                
                 }

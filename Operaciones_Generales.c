@@ -39,14 +39,15 @@ void error(TipoMKV *MKV,int a,int b){
 }
 
 int logifisi(TipoMKV MKV,int dirlog){
-    int dirfis,segmento,offset,base;
+    int dirfis,segmento,base,offset;
     segmento=(dirlog & 0x000F0000)>>16; 
-    offset=(dirlog & 0x0000FFFF);
+    offset=dirlog & 0x0000FFFF;
     dirfis = MKV.tabla_seg[segmento][0]+offset;
     if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
         return dirfis;
-    else
+    else{
         return -1;
+    }
 }
 
 void cambioip(TipoMKV *MKV,int TopA,int TopB){
@@ -128,7 +129,6 @@ void cargaVMI(TipoMKV *MKV,char *nombre_arch){
     if (arch!=NULL){
         for (int j=0;j<6;j++){
             fread(&cabecera[j], sizeof(unsigned char), 1, arch);
-            printf("cabecera en %d es %c\n\n",j,cabecera[j]);
         }
          //VMI25 1
          alto=0;
@@ -136,7 +136,6 @@ void cargaVMI(TipoMKV *MKV,char *nombre_arch){
          aux=0;
         fread(&alto,sizeof(unsigned char),1,arch);
         fread(&bajo,sizeof(unsigned char),1,arch);
-        printf("ALTO: %x BAJO %x",alto,bajo);
         alto=alto<<8;
         MKV->tamanoRAM=(alto+bajo)*1024; // paso a bytes
         
@@ -329,12 +328,11 @@ void setRegistro(TipoMKV *MKV,int opA,int valorB){      //guarda un valorB en un
     switch(tipo){
         case 0: MKV->reg[reg]=valorB;
             break;
-        case 1: MKV->reg[reg]=MKV->reg[reg] & MASC_LDH + valorB & MASC_AL;
+        case 1: MKV->reg[reg]=MKV->reg[reg] & 0xFFFFFF00 + valorB & MASC_AL;
             break;
-        case 2: MKV->reg[reg]=(MKV->reg[reg] & 0xFFFF00FF) + (valorB & MASC_AL)<<8;
+        case 2: MKV->reg[reg]=(MKV->reg[reg] & 0xFFFF00FF) + ((valorB & MASC_AL)<<8);
             break;
         case 3:  MKV->reg[reg]=(MKV->reg[reg] & MASC_LDH) + (valorB & MASC_AX);
-        printf("entro caso 3");
             break;
     }
 }
@@ -356,7 +354,7 @@ void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega sien
 
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
-    int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+( op & MASC_OFFSET);
+    int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+(short)(op & MASC_OFFSET);
     int auxL=logifisi(*MKV,dirlog);
     int opmem;
     MKV->reg[LAR]=dirlog;
@@ -379,6 +377,7 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
 
 void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
      int max,valor,aux;
+     valor=0;
      int dirfis=MKV->reg[MAR] & MASC_MARL;
      max=(MKV->reg[MAR] & MASC_MARH) >>16;
      for (int i=0;i<max;i++){
