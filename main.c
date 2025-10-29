@@ -313,11 +313,11 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     void (*Fops1[14])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, error, error, PUSH, POP, CALL};
     dirfis=logifisi(*MKV ,MKV->reg[IP]);
     int numins=1;
-    /* print de toda la tabla de segmentos:
+    //print de toda la tabla de segmentos:
     for (int i=0;i<8;i++){
         printf("val de i: %d base: %d tam: %d\n",i,MKV->tabla_seg[i][0],MKV->tabla_seg[i][1]);
     }
-    */
+    
     while ( dirfis!= -1 && MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
         
@@ -338,6 +338,8 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                             TopA=(instruccion & MASC_TOPA) >> 4;
                             TopB=(instruccion & MASC_TOPB) >> 6;
                             cambioip(MKV,TopA,TopB);
+                            imprimeMnemonico(instruccion & MASC_CODOP);
+                            printf("OPA: %x OPB: %x \n",MKV->reg[OPA],MKV->reg[OPB]);
                             Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                         }
                         else
@@ -347,6 +349,8 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                                 if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
                                     TopA=(instruccion & MASC_TOPB) >> 6;
                                     cambioip(MKV,TopA,0);
+                                    imprimeMnemonico(instruccion & MASC_CODOP);
+                                    printf("OPA: %x \n",MKV->reg[OPA]);
                                     Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
                                 } 
                     }

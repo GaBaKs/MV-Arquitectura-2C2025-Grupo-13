@@ -42,6 +42,7 @@ void SUB (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorA-= valorB;
     setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
+    printf("SALIOSUB");
 }
 
 void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
@@ -429,6 +430,7 @@ void POP(TipoMKV *MKV,int opA,int TopA){
     }
     MKV->reg[SP]+=4;
     setValor(MKV,opA,TopA,valor);
+    printf("\nENTROPOP\n");
     }
     else
         verificaerrores(MKV,6); //STACK UNDERFLOW
