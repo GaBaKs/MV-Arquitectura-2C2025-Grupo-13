@@ -42,7 +42,6 @@ void SUB (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorA-= valorB;
     setValor(MKV,opA,TopA,valorA);
     NZ_CC(valorA,MKV);
-    printf("SALIOSUB");
 }
 
 void MUL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
@@ -72,6 +71,7 @@ void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     valorA = getValor(MKV,opA,TopA);
+    printf("CMP: VALOR A: %x %d VALOR B: %x %d\n",valorA,valorA,valorB,valorB);
     valorA-= valorB;
     NZ_CC(valorA,MKV);
 }
@@ -193,10 +193,8 @@ void SYS1 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento, int i){
         }
         if (dirfis>=MKV->tabla_seg[segmento][0] && dirfis+i*cantDatos<=MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1]){
             if(!flag)
-                for (int k=i-1;k>=0;k--){      //tamanio de celda
-                    int aux=(dato & 0xFF000000) >> 24;
-                    MKV->mem[dirfis++]=aux ;
-                    dato<<=8;
+                for (int k=i;k>0;k--){ 
+                  MKV->mem[dirfis++]=(char)(dato >> (((k-1)*8)) & 0x000000FF) ; 
                 }
             else{
                 for (int k=i-1;k>=0;k--){     //tamanio de celda
@@ -328,16 +326,17 @@ void SYS(TipoMKV *MKV, int opA, int TopA){
 
 void JMP(TipoMKV *MKV, int opA, int TopA){
    int valor=getValor(MKV,opA,TopA);
-   if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+   if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
-    else
+    else{
         verificaerrores(MKV,3); //fallo de segmento
+    }
 }
 
 void JZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == MASC_Z){
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
         }
@@ -348,7 +347,7 @@ void JZ(TipoMKV *MKV, int opA, int TopA){
 
 void JP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0 && (MKV->reg[CC]&MASC_Z) == 0){
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
                 }
@@ -359,7 +358,7 @@ void JP(TipoMKV *MKV, int opA, int TopA){
 
 void JN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N && (MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
@@ -369,7 +368,7 @@ void JN(TipoMKV *MKV, int opA, int TopA){
 
 void JNZ(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_Z) == 0)
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
@@ -379,7 +378,7 @@ void JNZ(TipoMKV *MKV, int opA, int TopA){
 
 void JNP(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == MASC_N || (MKV->reg[CC]&MASC_Z) == MASC_Z)
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
@@ -389,7 +388,7 @@ void JNP(TipoMKV *MKV, int opA, int TopA){
 
 void JNN(TipoMKV *MKV, int opA, int TopA){
     int valor=getValor(MKV,opA,TopA);
-    if (valor>=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0] && valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][0]+MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
+    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         if((MKV->reg[CC]&MASC_N) == 0)
             MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
@@ -408,7 +407,7 @@ void NOT(TipoMKV *MKV, int opA, int TopA){
 void PUSH(TipoMKV *MKV, int opA, int TopA){
     int valorA;
     MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
-    if (MKV->reg[SP]>MKV->reg[SS]){
+    if (MKV->reg[SP]>=MKV->reg[SS]){
         valorA=getValor(MKV,opA,TopA);
         int dirfis=logifisi(*MKV,MKV->reg[SP]);
         for (int i=CANTCELDAS;i>0;i--){ 
@@ -430,7 +429,6 @@ void POP(TipoMKV *MKV,int opA,int TopA){
     }
     MKV->reg[SP]+=4;
     setValor(MKV,opA,TopA,valor);
-    printf("\nENTROPOP\n");
     }
     else
         verificaerrores(MKV,6); //STACK UNDERFLOW

@@ -316,9 +316,9 @@ void ImprimeKS(TipoMKV MKV){
             imprimehexa_Const(MKV,dirfis,&cant);
             imprimeTAB_Const(cant);
             int i=0;
-            char palabra[200];
+            char palabra[1000];
             printf("\"");
-            while(MKV.mem[dirfis+i]!=0 && dirfis+i<=MKV.tabla_seg[KS][0]+MKV.tabla_seg[KS][1]){ 
+            while(MKV.mem[dirfis+i]!=0 && (dirfis+i)<=MKV.tabla_seg[(MKV.reg[KS] & MASC_LDH) >>16][0]  +  MKV.tabla_seg[(MKV.reg[KS] & MASC_LDH) >>16][1]){  
                 if (MKV.mem[dirfis+i]>=32 && MKV.mem[dirfis+i]<=126){ //caracteres imprimibles
                     palabra[i]=MKV.mem[dirfis+i];
                 }

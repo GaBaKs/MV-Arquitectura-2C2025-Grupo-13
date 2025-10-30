@@ -41,10 +41,14 @@ void error(TipoMKV *MKV,int a,int b){
 int logifisi(TipoMKV MKV,int dirlog){
     int dirfis,segmento,base,offset;
     segmento=(dirlog & 0x000F0000)>>16; 
+    int aux;
     offset=dirlog & 0x0000FFFF;
-    dirfis = MKV.tabla_seg[segmento][0]+offset;
-    if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0])
+    dirfis=0;
+    aux=(int)MKV.tabla_seg[segmento][0];
+    dirfis = aux+offset; 
+    if(dirfis<=MKV.tabla_seg[segmento][1]+MKV.tabla_seg[segmento][0]){
         return dirfis;
+    }
     else{
         return -1;
     }
@@ -154,13 +158,14 @@ void cargaVMI(TipoMKV *MKV,char *nombre_arch){
         for(int k=0;k<8;k++){ //Este ciclo arma la tabla de segmentos 
             fread(&alto,sizeof(unsigned char),1,arch);
             fread(&bajo,sizeof(unsigned char),1,arch);
-            MKV->tabla_seg[k][0]=(alto<<8)+bajo;
+            MKV->tabla_seg[k][0]=(short)(alto<<8)+bajo;
             fread(&alto,sizeof(unsigned char),1,arch);
             fread(&bajo,sizeof(unsigned char),1,arch);
-            MKV->tabla_seg[k][1]=(alto<<8)+bajo;
+            MKV->tabla_seg[k][1]=(short)(alto<<8)+bajo;
             tamsegmentos+=MKV->tabla_seg[k][1];
         }
         if (tamsegmentos > MKV->tamanoRAM){
+            printf("la tamsegmentos: %d",tamsegmentos);
             verificaerrores(MKV,7); //error de insuficiente memoria
         }
         else{
@@ -369,7 +374,6 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
                 if (opmem=3)
                     MKV->reg[MAR]= 0x00010000+auxL;        
     }
-        
     else
         verificaerrores(MKV,3); 
                      // Error de segmento
@@ -382,9 +386,18 @@ void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion gua
      max=(MKV->reg[MAR] & MASC_MARH) >>16;
      for (int i=0;i<max;i++){
         valor<<=8;
-        aux=MKV->mem[dirfis+i];
+        aux=MKV->mem[dirfis++];
         valor+=aux;
+     }
+    if (max==1){
+        valor= (valor <<24);
+        valor= valor >>24;
     }
+    else
+        if (max==2){
+            valor= valor <<16;
+            valor= valor >>16;
+        }
     MKV->reg[MBR]=valor;
 }
 
