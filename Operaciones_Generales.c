@@ -359,7 +359,11 @@ void setInmediato(TipoMKV *MKV,int opA,int TopA,int valorB){ //valorB llega sien
 
 void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
     int aux=0;
-    int dirlog= (MKV->reg[(op & 0x001F0000) >> 16] )+(short)(op & MASC_OFFSET);
+    short offset=(op & MASC_OFFSET);
+    int dirlog= (MKV->reg[(op & 0x001F0000) >> 16]);
+    printf("\n OFFSET: %x dirlog: %x",offset,dirlog);
+    dirlog= dirlog+offset;
+    printf("\n\n\nDIRLOG LARMAR: %x\n\n\n",dirlog);
     int auxL=logifisi(*MKV,dirlog);
     int opmem;
     MKV->reg[LAR]=dirlog;
@@ -371,12 +375,16 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
             if (opmem==2)
                 MKV->reg[MAR]= 0x00020000+auxL;
             else
-                if (opmem=3)
-                    MKV->reg[MAR]= 0x00010000+auxL;        
+                if (opmem==3){
+                    MKV->reg[MAR]= 0x00010000+auxL;  
+                    printf("LEE 1 DATO DE MEMORIA \n");
+                }      
     }
-    else
+    else{
+        printf("error de segmento LARMAR");
         verificaerrores(MKV,3); 
                      // Error de segmento
+    }
 }
 
 void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion guardada en MAR
@@ -384,6 +392,7 @@ void getMemoria(TipoMKV *MKV){      // guarda en MBR el dato de la direccion gua
      valor=0;
      int dirfis=MKV->reg[MAR] & MASC_MARL;
      max=(MKV->reg[MAR] & MASC_MARH) >>16;
+     printf("\n\n\n\nSNADHABSDH\n\n\n\n");
      for (int i=0;i<max;i++){
         valor<<=8;
         aux=MKV->mem[dirfis++];

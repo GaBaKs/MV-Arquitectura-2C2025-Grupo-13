@@ -330,7 +330,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     
     while ( dirfis!= -1 && MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
-            //printf("INSTRUCCION: %x \n",instruccion);
+            printf("INSTRUCCION: %x \n",instruccion);
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
 
                 verificaerrores(MKV,1);
@@ -347,9 +347,10 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                         if (MKV->reg[OPC]>=0x10 && MKV->reg[OPC]<=0x1F){ //dos operandos
                             TopA=(instruccion & MASC_TOPA) >> 4;
                             TopB=(instruccion & MASC_TOPB) >> 6;
+                            printf("VALOR ACTUAL IP ANTES DE CAMBIO: %x",MKV->reg[IP]);
                             cambioip(MKV,TopA,TopB);
-                            //imprimeMnemonico(instruccion & MASC_CODOP);
-                            //printf("OPA: %x OPB: %x \n",MKV->reg[OPA],MKV->reg[OPB]);
+                            imprimeMnemonico(instruccion & MASC_CODOP);
+                            printf("OPA: %x OPB: %x \n",MKV->reg[OPA],MKV->reg[OPB]);
                             Fops2[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA,escopeta(MKV->reg[OPB]),TopB);
                         }
                         else
@@ -359,8 +360,8 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                                 if (MKV->reg[OPC]>=0x00 && MKV->reg[OPC]<=0x0D){    //un operando
                                     TopA=(instruccion & MASC_TOPB) >> 6;
                                     cambioip(MKV,TopA,0);
-                                    //imprimeMnemonico(instruccion & MASC_CODOP);
-                                    //printf("OPA: %x \n",MKV->reg[OPA]);
+                                    imprimeMnemonico(instruccion & MASC_CODOP);
+                                    printf("OPA: %x \n",MKV->reg[OPA]);
                                     Fops1[instruccion & 0x0F](MKV,escopeta(MKV->reg[OPA]),TopA);  
                                 } 
                     }

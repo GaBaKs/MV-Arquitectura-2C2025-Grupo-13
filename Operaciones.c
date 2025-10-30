@@ -23,6 +23,7 @@ void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     setValor(MKV,opA,TopA,valorB);
+    printf("VALOR DE EAX: %x \n\n",MKV->reg[EAX]);
 }
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
@@ -442,6 +443,7 @@ void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes d
 
 void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
     POP(MKV,IP,1);
+    MKV->breakpoint=1;
 }
 
 
