@@ -165,7 +165,6 @@ void cargaVMI(TipoMKV *MKV,char *nombre_arch){
             tamsegmentos+=MKV->tabla_seg[k][1];
         }
         if (tamsegmentos > MKV->tamanoRAM){
-            printf("la tamsegmentos: %d",tamsegmentos);
             verificaerrores(MKV,7); //error de insuficiente memoria
         }
         else{
@@ -371,8 +370,7 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
             if (opmem==2)
                 MKV->reg[MAR]= 0x00020000+auxL;
             else
-                if (opmem=3)
-                    MKV->reg[MAR]= 0x00010000+auxL;        
+                MKV->reg[MAR]= 0x00010000+auxL;        
     }
     else
         verificaerrores(MKV,3); 

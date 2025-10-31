@@ -71,7 +71,6 @@ void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     valorA = getValor(MKV,opA,TopA);
-    printf("CMP: VALOR A: %x %d VALOR B: %x %d\n",valorA,valorA,valorB,valorB);
     valorA-= valorB;
     NZ_CC(valorA,MKV);
 }
