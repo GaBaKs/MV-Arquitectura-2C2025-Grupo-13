@@ -12,7 +12,7 @@
 void NZ_CC (int valor, TipoMKV *MKV){
     MKV->reg[CC]=0;
     if (valor==0)
-        MKV->reg[CC] |= 0x40000000; // setea el bit Z 0100 0000 0000 0000 0000 0000 0000 0000
+        MKV->reg[CC]|= 0x40000000; // setea el bit Z 0100 0000 0000 0000 0000 0000 0000 0000
     else
         if (valor<0)
             MKV->reg[CC]|=0x80000000; // setea el bit N 1000 0000 0000 0000 0000 0000 0000 0000
@@ -23,7 +23,6 @@ void MOV (TipoMKV *MKV,int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     setValor(MKV,opA,TopA,valorB);
-    printf("VALOR DE EAX: %x \n\n",MKV->reg[EAX]);
 }
 
 void ADD (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
@@ -72,8 +71,9 @@ void CMP (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     int valorB, valorA;
     valorB = getValor(MKV,opB,TopB);
     valorA = getValor(MKV,opA,TopA);
-    printf("CMP: VALOR A: %x %d VALOR B: %x %d\n",valorA,valorA,valorB,valorB);
+    printf("VALOR A EN CMP: %x Y VALOR B EN CMP %x \n",valorA,valorB);
     valorA-= valorB;
+    printf("RESULTADO CMP: %d",valorA);
     NZ_CC(valorA,MKV);
 }
 
@@ -148,7 +148,7 @@ void LDL (TipoMKV *MKV, int opA, int TopA, int opB, int TopB){
     valorB = getValor(MKV,opB,TopB); 
     valorA = getValor(MKV,opA,TopA);
     valorA&=0xFFFF0000;
-    valorA|=valorB&0x0000FFFF;
+    valorA|=(valorB&0x0000FFFF);
     setValor(MKV,opA,TopA,valorA);
 }
 
@@ -221,7 +221,7 @@ void SYS2 (TipoMKV *MKV,int cantDatos, int dirfis,int segmento,int i){
             for(k=0;k<i;k++){ //DIMENSION, cantidad de celdas a leer para cada dato
                 x = x << 8;
                 x =  x +(int) MKV->mem[dirfis] ;
-                if((MKV->reg[EAX] & 0x02) == 0X02){ //ES UN CHAR
+                if((MKV->reg[EAX] & 0x02) == 002){ //ES UN CHAR
                     y = MKV->mem[dirfis];
                     if(y > 31 && y < 127)
                         printf("%c",y);
@@ -279,6 +279,7 @@ void SYS4 (TipoMKV *MKV,int dirfis, int segmento){
         printf("%c",MKV->mem[dirfis+i]);
         i++;
     }
+    printf("NASHE");
     if (dirfis+i>MKV->tabla_seg[segmento][0]+MKV->tabla_seg[segmento][1])
         verificaerrores(MKV,3);
     
