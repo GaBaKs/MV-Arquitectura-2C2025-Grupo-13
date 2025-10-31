@@ -328,7 +328,8 @@ void JMP(TipoMKV *MKV, int opA, int TopA){
    if (valor<=MKV->tabla_seg[(MKV->reg[CS]& MASC_LDH)>>16][1]){
         MKV->reg[IP]=(MKV->reg[IP] & MASC_LDH) + valor;
     }
-    else{
+    else{       // si entras a este else, avisale a franco porque el traductor tiene algo mal o porque tu tabla de segmentos es un desastre.
+        printf("Que programador desprolijo, escribio mal la direccion a la que debe saltar...\n");
         verificaerrores(MKV,3); //fallo de segmento
     }
 }
@@ -408,10 +409,8 @@ void PUSH(TipoMKV *MKV, int opA, int TopA){
     MKV->reg[SP]-=4; //Muevo SP para ingresar el nuevo valor en el stack
     if (MKV->reg[SP]>=MKV->reg[SS]){
         valorA=getValor(MKV,opA,TopA);
-        int dirfis=logifisi(*MKV,MKV->reg[SP]);
-        for (int i=CANTCELDAS;i>0;i--){ 
-            MKV->mem[dirfis++]=(char)(valorA >> (((i-1)*8)) & 0x000000FF) ; 
-        }
+        int reg=0x00070000;
+        setValor(MKV,reg,3,valorA);
     }
     else
         verificaerrores(MKV,5); //STACK OVERFLOW
@@ -421,13 +420,10 @@ void POP(TipoMKV *MKV,int opA,int TopA){
     int valor,aux;
     if (MKV->reg[SP]+4<=(MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS]&MASC_LDH )>> 16][1])){
         int dirfis=logifisi(*MKV,MKV->reg[SP]);
-     for (int i=0;i<4;i++){
-        valor<<=8;
-        aux=MKV->mem[dirfis+i];
-        valor+=aux;
-    }
-    MKV->reg[SP]+=4;
-    setValor(MKV,opA,TopA,valor);
+        int reg=0x00070000;
+        valor=getValor(MKV,reg,3);
+        MKV->reg[SP]+=4;
+        setValor(MKV,opA,TopA,valor);
     }
     else
         verificaerrores(MKV,6); //STACK UNDERFLOW
@@ -442,8 +438,3 @@ void CALL(TipoMKV *MKV,int opA,int TopA){ //almacenará en la pila los 4 bytes d
 void RET(TipoMKV *MKV){ //modificará el IP obteniendolo del tope de la pila, equivale a POP IP.
     POP(MKV,IP,1);
 }
-
-
-
-
-

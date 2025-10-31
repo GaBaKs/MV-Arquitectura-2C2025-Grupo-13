@@ -5,7 +5,6 @@
 #include "mascaras.h"
 #include "Operaciones_Generales.h"
 #include "Codigos_Registros.h"
-// hacer 3 typedef separados
 
 void getOperandosDissa(TipoMKV MKV,char instruccion,int dirfis,int *opA,int *opB, int TopA, int TopB){              
         int LopA=0;
@@ -99,7 +98,7 @@ void devuelveRegistro(int registro){
     case 0x0F:
         printf("EFX");
         break;
-    case 0x4A:// 01 0 01010
+    case 0x4A: // El que le tiene miedo a las matematicas que no siga leyendo ;)
         printf("AL");
         break;
     case 0x4B:
@@ -517,4 +516,3 @@ void dissa(TipoMKV MKV){
         instruccion=MKV.mem[dirfis];
     }
 }
-

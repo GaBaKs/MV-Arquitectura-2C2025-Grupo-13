@@ -369,7 +369,7 @@ void larmar(TipoMKV *MKV,int op){        // cada vez q se accede a memoria
         else
             if (opmem==2)
                 MKV->reg[MAR]= 0x00020000+auxL;
-            else
+            else // if(opmem=3) los que conocen saben
                 MKV->reg[MAR]= 0x00010000+auxL;        
     }
     else
@@ -413,4 +413,3 @@ void setMemoria(TipoMKV *MKV){      // guarda el dato de MBR en memoria en la di
         verificaerrores(MKV,3); //fallo de segmento
      
 }
-

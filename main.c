@@ -25,13 +25,12 @@ int main(int argc, char *argv[]){
     MKV.tamanoRAM=MEMORIA;
     char str[200];
     strcpy(str,argv[1]);
-    printf("%s\n",str);
     int j=1;  
     MKV.flag=0;
     char nombreVMI[200];
     inicializacion(str,&MKV,argc,argv,nombreVMI);
     //compruebo dissa
-    while (j<argc && (strcmp(argv[j],"-d")==0))
+    while (j<argc && (strcmp(argv[j],"-d")!=0))
         j++;
     if (j<argc){
         dissa(MKV);
@@ -91,10 +90,10 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
                 if (cabecera2==2){           //VMX25 parte 2
                     if (strstr(argv[2],".vmi")==NULL){
                         strcpy(nombreVMI,"?");
-                        printf("NO encontro un VMI\n");
+                        printf("No encontro un VMI\n");
                     }
                     else{
-                        printf("ENCONTRO UN VMI\n");
+                        printf("Encontro un VMI\n");
                         strcpy(nombreVMI,argv[2]);
                     }
                     MKV->reg[CS]=-1;
@@ -115,7 +114,7 @@ void inicializacion(char nombre_arch[], TipoMKV *MKV,int argc,char *argv[],char 
                     }
                     
                     creotablaseg(MKV,vectoraux);
-                    printf("VALOR DE PS: %x DS: %x ES: %x SS: %x KS: %x CS: %x \n",MKV->reg[PS],MKV->reg[DS],MKV->reg[ES],MKV->reg[SS],MKV->reg[KS],MKV->reg[CS]);
+                    //printf("VALOR DE PS: %x DS: %x ES: %x SS: %x KS: %x CS: %x \n",MKV->reg[PS],MKV->reg[DS],MKV->reg[ES],MKV->reg[SS],MKV->reg[KS],MKV->reg[CS]);
                     if (!MKV->flag){
                         MKV->reg[SP]=MKV->reg[SS]+MKV->tabla_seg[(MKV->reg[SS] & 0x000F0000) >> 16][1];    // inicio SP con el valor de SS y el tam de la pila
                         int aux2=0;
@@ -222,9 +221,6 @@ void cargaPS(TipoMKV *MKV,int argc,char *argv[],int * tamPS,int *argc2){
     }
     else
         (*tamPS) = 0;
-
-    for (int asd=0;asd<aux;asd++)    
-      printf("[%x] %x\n",asd,MKV->mem[asd]);
 }
 
 void inicia_SS(TipoMKV *MKV, int argc2){
@@ -314,7 +310,6 @@ void imprimepila(TipoMKV *MKV){
     }
 }
 
-
 void ejecucion(TipoMKV *MKV,char * nombreVMI){
     unsigned char instruccion;
     int TopA,TopB;
@@ -325,11 +320,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     void (*Fops1[14])(TipoMKV *, int, int )={SYS , JMP , JZ , JP , JN , JNZ , JNP , JNN , NOT, error, error, PUSH, POP, CALL};
     dirfis=logifisi(*MKV ,MKV->reg[IP]);
    
-    int numins=1;
-    for (int i=0;i<8;i++){
-        printf("val de i: %d base: %d tam: %d\n",i,MKV->tabla_seg[i][0],MKV->tabla_seg[i][1]);
-    }
-    
+    int numins=1;    
     while ( dirfis!= -1 && MKV->reg[IP]!=-1 && !MKV->flag && dirfis<MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][0]  +  MKV->tabla_seg[(MKV->reg[CS] & MASC_LDH) >>16][1]){   // mientas no exista un error o se termine la memoria
             instruccion=MKV->mem[dirfis];   // guardo la instruccion de donde apunta IP
             if (codinvalido(instruccion & MASC_CODOP)){     // error: Codigo invalido
@@ -375,7 +366,7 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
                     case 'q': MKV->reg[IP]=-1;
                         break;
                     case '\n': break;
-
+                    
                     case 't': imprimepila(MKV);
                         break;
                 }
@@ -388,4 +379,3 @@ void ejecucion(TipoMKV *MKV,char * nombreVMI){
     }
    // printf("\nFIN de ejecucion IP: %x dirfis: %X",MKV->reg[IP],dirfis);     
 }
-
